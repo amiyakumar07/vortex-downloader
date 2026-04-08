@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms & Conditions - VortexDownload</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .legal-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+        .legal-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .legal-header h1 {
+            font-size: 40px;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+        .legal-header p {
+            color: var(--gray);
+        }
+        .legal-section {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 25px;
+        }
+        .legal-section h2 {
+            font-size: 22px;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        .legal-section p, .legal-section li {
+            color: var(--gray);
+            line-height: 1.7;
+            margin-bottom: 12px;
+        }
+        .legal-section ul {
+            padding-left: 25px;
+            margin: 15px 0;
+        }
+        .last-updated {
+            text-align: center;
+            color: var(--gray);
+            font-size: 14px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"><div class="bg-gradient"></div><div class="bg-gradient-2"></div><div class="bg-gradient-3"></div></div>
+    <div class="cursor"></div><div class="cursor-follower"></div>
+    <canvas id="particleCanvas"></canvas>
+
+    <header class="header">
+        <div class="header-container">
+            <div class="logo"><div class="logo-icon-glow"><i class="fas fa-download"></i></div><div class="logo-text">Vortex<span>Download</span></div><div class="logo-badge">PRO</div></div>
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-link"><i class="fas fa-home"></i><span>Home</span></a>
+                <a href="history.html" class="nav-link"><i class="fas fa-history"></i><span>History</span></a>
+                <a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i><span>About</span></a>
+            </nav>
+            <div class="header-actions">
+                <div class="auth-buttons" id="authButtons"><button class="btn-login" id="loginBtn">Sign In</button><button class="btn-signup" id="signupBtn">Sign Up</button></div>
+                <div class="user-menu" style="display: none;" id="userMenu"><img src="" alt="" class="user-avatar" id="userAvatar"><div class="user-dropdown"><div class="user-info"><strong id="userName">John Doe</strong><span id="userTier">Free Member</span></div><div class="dropdown-divider"></div><a href="history.html"><i class="fas fa-history"></i>Download History</a><a href="#"><i class="fas fa-cog"></i>Settings</a><div class="dropdown-divider"></div><a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i>Logout</a></div></div>
+                <button class="mobile-menu-btn" id="mobileMenuBtn"><i class="fas fa-bars"></i></button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="legal-container">
+            <div class="legal-header">
+                <h1>Terms & <span class="gradient-text">Conditions</span></h1>
+                <p>Last updated: January 1, 2024</p>
+            </div>
+
+            <div class="legal-section">
+                <h2>1. Acceptance of Terms</h2>
+                <p>By accessing and using VortexDownload, you agree to be bound by these Terms & Conditions. If you disagree with any part of these terms, you may not use our service.</p>
+            </div>
+
+            <div class="legal-section">
+                <h2>2. Description of Service</h2>
+                <p>VortexDownload provides a web-based tool that allows users to download videos from various third-party platforms including but not limited to YouTube, Instagram, TikTok, Facebook, and Twitter. We do not host any content on our servers.</p>
+            </div>
+
+            <div class="legal-section">
+                <h2>3. User Responsibilities</h2>
+                <p>You are solely responsible for:</p>
+                <ul>
+                    <li>Ensuring you have the legal right to download any content</li>
+                    <li>Complying with all applicable copyright laws and regulations</li>
+                    <li>Not using our service for any illegal purposes</li>
+                    <li>Respecting the terms of service of third-party platforms</li>
+                </ul>
+            </div>
+
+            <div class="legal-section">
+                <h2>4. Copyright and Intellectual Property</h2>
+                <p>VortexDownload respects intellectual property rights. We do not encourage or support copyright infringement. Users are expected to download only content they have permission to download. If you believe your copyrighted work has been infringed, please contact us.</p>
+            </div>
+
+            <div class="legal-section">
+                <h2>5. Limitation of Liability</h2>
+                <p>VortexDownload is provided "as is" without any warranties. We shall not be liable for any damages arising from the use of our service, including but not limited to copyright infringement claims or data loss.</p>
+            </div>
+
+            <div class="legal-section">
+                <h2>6. Changes to Terms</h2>
+                <p>We reserve the right to modify these terms at any time. Continued use of the service after changes constitutes acceptance of the new terms.</p>
+            </div>
+
+            <div class="legal-section">
+                <h2>7. Contact Information</h2>
+                <p>For questions about these Terms & Conditions, please contact us at: <strong>legal@vortexdownload.com</strong></p>
+            </div>
+
+            <div class="last-updated">
+                <p>© 2024 VortexDownload. All rights reserved.</p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer"><div class="footer-container"><div class="footer-bottom"><div class="copyright"><i class="far fa-copyright"></i><span>2024 VortexDownload. All rights reserved.</span></div></div></div></footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
