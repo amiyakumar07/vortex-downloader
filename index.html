@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>VortexDownload | Premium Video Downloader</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-animation">
+        <div class="bg-gradient"></div>
+        <div class="bg-gradient-2"></div>
+        <div class="bg-gradient-3"></div>
+        <div class="bg-gradient-4"></div>
+    </div>
+
+    <!-- Floating Particles -->
+    <div class="particles-container" id="particlesContainer"></div>
+
+    <!-- Custom Cursor -->
+    <div class="cursor"></div>
+    <div class="cursor-follower"></div>
+
+    <!-- Floating Shapes -->
+    <div class="floating-shape shape-1"></div>
+    <div class="floating-shape shape-2"></div>
+    <div class="floating-shape shape-3"></div>
+    <div class="floating-shape shape-4"></div>
+    <div class="floating-shape shape-5"></div>
+
+    <!-- ==================== HAMBURGER MENU (MOBILE SIDEBAR) ==================== -->
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+    
+    <div class="mobile-sidebar" id="mobileSidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <div class="logo-icon-glow"><i class="fas fa-download"></i></div>
+                <span>Vortex</span>
+            </div>
+            <button class="close-sidebar" id="closeSidebar"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <!-- User Profile Section in Sidebar -->
+        <div class="sidebar-user" id="sidebarUserSection">
+            <div class="user-avatar-glow" id="sidebarAvatar">
+                <img src="https://ui-avatars.com/api/?background=8b5cf6&color=fff&bold=true&name=Guest" alt="">
+            </div>
+            <div class="sidebar-user-info">
+                <h4 id="sidebarUserName">Welcome, Guest</h4>
+                <p id="sidebarUserStatus">Sign in for unlimited access</p>
+                <div class="user-badge" id="sidebarUserBadge" style="display: none;">Free Member</div>
+            </div>
+        </div>
+        
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <a href="index.html" class="sidebar-link active">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="history.html" class="sidebar-link">
+                    <i class="fas fa-history"></i>
+                    <span>Download History</span>
+                    <span class="badge" id="historyBadge">0</span>
+                </a>
+                <a href="#" class="sidebar-link" id="sidebarDownloads">
+                    <i class="fas fa-download"></i>
+                    <span>My Downloads</span>
+                </a>
+                <a href="#" class="sidebar-link">
+                    <i class="fas fa-star"></i>
+                    <span>Favorites</span>
+                </a>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Account</div>
+                <a href="#" class="sidebar-link" id="sidebarProfile">
+                    <i class="fas fa-user-circle"></i>
+                    <span>My Profile</span>
+                </a>
+                <a href="#" class="sidebar-link" id="sidebarAccount">
+                    <i class="fas fa-cog"></i>
+                    <span>Account Settings</span>
+                </a>
+                <a href="#" class="sidebar-link">
+                    <i class="fas fa-bell"></i>
+                    <span>Notifications</span>
+                    <span class="badge new">3</span>
+                </a>
+                <a href="#" class="sidebar-link">
+                    <i class="fas fa-credit-card"></i>
+                    <span>Billing & Plans</span>
+                </a>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Support</div>
+                <a href="about.html" class="sidebar-link">
+                    <i class="fas fa-info-circle"></i>
+                    <span>About Us</span>
+                </a>
+                <a href="contact.html" class="sidebar-link">
+                    <i class="fas fa-envelope"></i>
+                    <span>Contact</span>
+                </a>
+                <a href="terms.html" class="sidebar-link">
+                    <i class="fas fa-file-contract"></i>
+                    <span>Terms & Conditions</span>
+                </a>
+                <a href="privacy.html" class="sidebar-link">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Privacy Policy</span>
+                </a>
+                <a href="#" class="sidebar-link">
+                    <i class="fas fa-headset"></i>
+                    <span>Help & Support</span>
+                </a>
+            </div>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <div class="sidebar-actions" id="sidebarAuthActions">
+                <button class="sidebar-login-btn" id="mobileLoginBtn">
+                    <i class="fas fa-sign-in-alt"></i> Sign In
+                </button>
+                <button class="sidebar-signup-btn" id="mobileSignupBtn">
+                    <i class="fas fa-user-plus"></i> Sign Up
+                </button>
+            </div>
+            <div class="sidebar-user-actions" id="sidebarUserActions" style="display: none;">
+                <button class="sidebar-upgrade-btn" id="mobileUpgradeBtn">
+                    <i class="fas fa-crown"></i> Upgrade to Pro
+                </button>
+                <button class="sidebar-logout-btn" id="mobileLogoutBtn">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+            <div class="sidebar-version">Version 2.0.0</div>
+        </div>
+    </div>
+
+    <!-- ==================== MODALS ==================== -->
+    <!-- Login Modal -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Welcome back</h2>
+                <button class="modal-close" id="closeLoginModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="social-login">
+                    <button class="social-btn google" id="googleLogin"><i class="fab fa-google"></i>Continue with Google</button>
+                    <button class="social-btn github" id="githubLogin"><i class="fab fa-github"></i>Continue with GitHub</button>
+                </div>
+                <div class="divider"><span>or continue with email</span></div>
+                <form id="loginForm">
+                    <div class="input-field"><i class="fas fa-envelope"></i><input type="email" id="loginEmail" placeholder="Email address" required></div>
+                    <div class="input-field"><i class="fas fa-lock"></i><input type="password" id="loginPassword" placeholder="Password" required><i class="fas fa-eye-slash toggle-password"></i></div>
+                    <div class="form-options">
+                        <label class="checkbox"><input type="checkbox" id="rememberMe"> Remember me</label>
+                        <a href="#" class="forgot-link">Forgot password?</a>
+                    </div>
+                    <button type="submit" class="modal-submit">Sign In</button>
+                </form>
+                <p class="modal-footer-text">Don't have an account? <a href="#" id="switchToSignup">Sign up</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div class="modal" id="signupModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create account</h2>
+                <button class="modal-close" id="closeSignupModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="social-login">
+                    <button class="social-btn google" id="googleSignup"><i class="fab fa-google"></i>Sign up with Google</button>
+                    <button class="social-btn github" id="githubSignup"><i class="fab fa-github"></i>Sign up with GitHub</button>
+                </div>
+                <div class="divider"><span>or sign up with email</span></div>
+                <form id="signupForm">
+                    <div class="input-field"><i class="fas fa-user"></i><input type="text" id="signupName" placeholder="Full name" required></div>
+                    <div class="input-field"><i class="fas fa-envelope"></i><input type="email" id="signupEmail" placeholder="Email address" required></div>
+                    <div class="input-field"><i class="fas fa-lock"></i><input type="password" id="signupPassword" placeholder="Password" required></div>
+                    <div class="input-field"><i class="fas fa-check-circle"></i><input type="password" id="signupConfirm" placeholder="Confirm password" required></div>
+                    <label class="checkbox"><input type="checkbox" id="agreeTerms" required> I agree to the <a href="terms.html">Terms of Service</a></label>
+                    <button type="submit" class="modal-submit">Create Account</button>
+                </form>
+                <p class="modal-footer-text">Already have an account? <a href="#" id="switchToLogin">Sign in</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Modal (User Details) -->
+    <div class="modal" id="profileModal">
+        <div class="modal-content profile-modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-circle"></i> My Profile</h2>
+                <button class="modal-close" id="closeProfileModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="profile-avatar-section">
+                    <div class="profile-avatar">
+                        <img id="profileAvatar" src="https://ui-avatars.com/api/?background=8b5cf6&color=fff&name=User" alt="">
+                        <button class="avatar-edit-btn"><i class="fas fa-camera"></i></button>
+                    </div>
+                    <h3 id="profileName">John Doe</h3>
+                    <p class="profile-email" id="profileEmail">john.doe@example.com</p>
+                    <div class="profile-badge" id="profileBadge">Free Member</div>
+                </div>
+                <div class="profile-stats">
+                    <div class="profile-stat">
+                        <div class="stat-number" id="downloadCount">0</div>
+                        <div class="stat-label">Total Downloads</div>
+                    </div>
+                    <div class="profile-stat">
+                        <div class="stat-number" id="memberSince">2024</div>
+                        <div class="stat-label">Member Since</div>
+                    </div>
+                </div>
+                <div class="profile-actions">
+                    <button class="profile-action-btn" id="editProfileBtn"><i class="fas fa-edit"></i> Edit Profile</button>
+                    <button class="profile-action-btn" id="changePasswordBtn"><i class="fas fa-lock"></i> Change Password</button>
+                    <button class="profile-action-btn danger" id="deleteAccountBtn"><i class="fas fa-trash-alt"></i> Delete Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content settings-modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-cog"></i> Account Settings</h2>
+                <button class="modal-close" id="closeSettingsModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <h3>General Settings</h3>
+                    <div class="setting-item">
+                        <label>Language</label>
+                        <select id="languageSelect">
+                            <option>English</option>
+                            <option>Spanish</option>
+                            <option>French</option>
+                            <option>German</option>
+                            <option>Japanese</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <label>Default Quality</label>
+                        <select id="defaultQuality">
+                            <option>Highest (4K/8K)</option>
+                            <option>1080p</option>
+                            <option>720p</option>
+                            <option>480p</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <label>Download Location</label>
+                        <div class="setting-input-group">
+                            <input type="text" id="downloadLocation" placeholder="C:/Downloads" value="C:/Users/Downloads">
+                            <button class="browse-btn">Browse</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <h3>Notifications</h3>
+                    <div class="setting-item toggle">
+                        <label>Email Notifications</label>
+                        <label class="switch"><input type="checkbox" id="emailNotifications"><span class="slider"></span></label>
+                    </div>
+                    <div class="setting-item toggle">
+                        <label>Download Complete Alerts</label>
+                        <label class="switch"><input type="checkbox" id="downloadAlerts" checked><span class="slider"></span></label>
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <h3>Privacy</h3>
+                    <div class="setting-item toggle">
+                        <label>Keep Download History</label>
+                        <label class="switch"><input type="checkbox" id="keepHistory" checked><span class="slider"></span></label>
+                    </div>
+                    <button class="clear-history-btn" id="clearHistorySettingsBtn"><i class="fas fa-trash-alt"></i> Clear All History</button>
+                </div>
+                <div class="settings-save">
+                    <button class="modal-submit" id="saveSettingsBtn">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Premium Modal -->
+    <div class="modal" id="premiumModal">
+        <div class="modal-content premium-modal">
+            <div class="modal-header">
+                <h2>✨ Upgrade to Premium</h2>
+                <button class="modal-close" id="closePremiumModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="premium-features">
+                    <div class="premium-feature"><i class="fas fa-infinity"></i><div><h4>Unlimited Downloads</h4><p>No daily limits or restrictions</p></div></div>
+                    <div class="premium-feature"><i class="fas fa-rocket"></i><div><h4>5x Faster Speed</h4><p>Priority download servers</p></div></div>
+                    <div class="premium-feature"><i class="fas fa-cloud-download-alt"></i><div><h4>Batch Download</h4><p>Download entire playlists at once</p></div></div>
+                    <div class="premium-feature"><i class="fas fa-headset"></i><div><h4>24/7 Support</h4><p>Priority customer support</p></div></div>
+                </div>
+                <div class="pricing-plans">
+                    <div class="plan"><h3>Monthly</h3><div class="price">$9.99<span>/mo</span></div><button class="plan-btn">Choose Plan</button></div>
+                    <div class="plan popular"><div class="popular-badge">🔥 Most Popular</div><h3>Yearly</h3><div class="price">$79.99<span>/yr</span></div><div class="savings">Save 33%</div><button class="plan-btn primary">Choose Plan</button></div>
+                    <div class="plan"><h3>Lifetime</h3><div class="price">$199<span>one-time</span></div><button class="plan-btn">Choose Plan</button></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== HEADER ==================== -->
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
+                <div class="logo-icon-glow">
+                    <i class="fas fa-download"></i>
+                </div>
+                <div class="logo-text">Vortex<span>Download</span></div>
+                <div class="logo-badge">PRO</div>
+            </div>
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-link active"><i class="fas fa-home"></i><span>Home</span></a>
+                <a href="#" class="nav-link" id="premiumNavBtn"><i class="fas fa-crown"></i><span>Features</span></a>
+                <a href="history.html" class="nav-link"><i class="fas fa-history"></i><span>History</span></a>
+                <a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i><span>About</span></a>
+            </nav>
+            <div class="header-actions">
+                <button class="icon-btn" id="searchBtn"><i class="fas fa-search"></i></button>
+                <button class="icon-btn" id="premiumBtn"><i class="fas fa-crown"></i></button>
+                <button class="icon-btn" id="notificationBtn"><i class="fas fa-bell"></i><span class="notification-dot"></span></button>
+                
+                <!-- Auth Buttons (visible when logged out) -->
+                <div class="auth-buttons" id="authButtons">
+                    <button class="btn-login" id="loginBtn">Sign In</button>
+                    <button class="btn-signup" id="signupBtn">Sign Up</button>
+                </div>
+                
+                <!-- User Menu (visible when logged in) -->
+                <div class="user-menu" style="display: none;" id="userMenu">
+                    <div class="user-menu-trigger">
+                        <img src="https://ui-avatars.com/api/?background=8b5cf6&color=fff&name=User" alt="" class="user-avatar" id="userAvatar">
+                        <div class="user-menu-info">
+                            <span class="user-name" id="userName">John Doe</span>
+                            <span class="user-tier" id="userTier">Free Member</span>
+                        </div>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="user-dropdown">
+                        <div class="dropdown-header">
+                            <div class="dropdown-avatar">
+                                <img src="https://ui-avatars.com/api/?background=8b5cf6&color=fff&name=User" id="dropdownAvatar" alt="">
+                            </div>
+                            <div class="dropdown-user-info">
+                                <strong id="dropdownUserName">John Doe</strong>
+                                <span id="dropdownUserEmail">john@example.com</span>
+                            </div>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" id="profileDropdownBtn"><i class="fas fa-user-circle"></i> My Profile</a>
+                        <a href="#" id="settingsDropdownBtn"><i class="fas fa-cog"></i> Account Settings</a>
+                        <a href="history.html"><i class="fas fa-history"></i> Download History</a>
+                        <a href="#"><i class="fas fa-download"></i> My Downloads</a>
+                        <a href="#" id="upgradeDropdownBtn"><i class="fas fa-crown"></i> Upgrade to Pro</a>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                    </div>
+                </div>
+                
+                <!-- Hamburger Menu Button -->
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <!-- Hero Section -->
+        <div class="hero">
+            <div class="hero-badge">
+                <span class="badge-pulse"></span>
+                <span>✨ Trusted by 2M+ creators worldwide</span>
+            </div>
+            <h1 class="hero-title">
+                Download Videos From<br>
+                <span class="gradient-text">Any Platform</span>
+                <span class="hero-emoji">⚡</span>
+            </h1>
+            <p class="hero-desc">The most powerful video downloading tool. Support 1000+ platforms including YouTube, Instagram, TikTok, Facebook, Twitter. High quality, fast speed, completely secure.</p>
+            <div class="stats">
+                <div class="stat"><div class="stat-value">2M+</div><div class="stat-label">Daily Downloads</div></div>
+                <div class="stat"><div class="stat-value">1000+</div><div class="stat-label">Supported Sites</div></div>
+                <div class="stat"><div class="stat-value">99.99%</div><div class="stat-label">Uptime</div></div>
+                <div class="stat"><div class="stat-value">8K</div><div class="stat-label">Ultra HD</div></div>
+            </div>
+        </div>
+
+        <!-- Main Card -->
+        <div class="card">
+            <div class="card-glow"></div>
+            <div class="card-inner">
+                <div class="input-group">
+                    <div class="input-wrapper">
+                        <i class="fas fa-link"></i>
+                        <input type="text" id="urlInput" placeholder="Paste video, reel, or short link here...">
+                        <div class="input-border"></div>
+                    </div>
+                    <button id="fetchInfoBtn" class="btn-primary">
+                        <i class="fas fa-magic"></i>
+                        <span>Analyze</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+
+   <div class="platforms">
+    <div class="platform"><i class="fab fa-youtube"></i><span>YouTube</span></div>
+    <div class="platform"><i class="fab fa-instagram"></i><span>Instagram</span></div>
+    <div class="platform"><i class="fab fa-tiktok"></i><span>TikTok</span></div>
+    <div class="platform"><i class="fab fa-facebook"></i><span>Facebook</span></div>
+    <div class="platform"><i class="fab fa-twitter"></i><span>X (Twitter)</span></div>
+    <div class="platform"><i class="fab fa-pinterest"></i><span>Pinterest</span></div>
+    <div class="platform"><i class="fab fa-reddit"></i><span>Reddit</span></div>
+</div>
+
+                <div id="loading" class="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <div class="loading-text">
+                        <h4>Fetching video details</h4>
+                        <p>Please wait while we analyze your link...</p>
+                    </div>
+                </div>
+
+                <div id="videoInfo" class="video-preview" style="display: none;">
+                    <div class="preview-thumb">
+                        <img id="thumbnail" alt="Video thumbnail">
+                        <div class="platform-badge" id="platformBadge">
+                            <i class="fab fa-youtube"></i>
+                            <span>YouTube</span>
+                        </div>
+                        <div class="thumb-overlay">
+                            <i class="fas fa-play"></i>
+                        </div>
+                    </div>
+                    <div class="preview-details">
+                        <h3 id="videoTitle">Video Title</h3>
+                        <div class="preview-meta">
+                            <span><i class="far fa-clock"></i> <span id="videoDuration"></span></span>
+                            <span><i class="fas fa-chart-line"></i> HD Quality</span>
+                            <span><i class="fas fa-eye"></i> <span id="videoViews">-</span> views</span>
+                        </div>
+                        
+                        <div class="options">
+                            <div class="option-group">
+                                <label><i class="fas fa-video"></i> Quality</label>
+                                <div class="quality-selector">
+                                    <button class="quality-option active" data-quality="highest">Highest</button>
+                                    <button class="quality-option" data-quality="1080p">1080p</button>
+                                    <button class="quality-option" data-quality="720p">720p</button>
+                                    <button class="quality-option" data-quality="480p">480p</button>
+                                </div>
+                                <select id="qualitySelect" style="display: none;">
+                                    <option value="highest">Highest</option>
+                                    <option value="1080p">1080p</option>
+                                    <option value="720p">720p</option>
+                                    <option value="480p">480p</option>
+                                </select>
+                            </div>
+                            <div class="option-group">
+                                <label><i class="fas fa-file-video"></i> Format</label>
+                                <div class="format-selector">
+                                    <button class="format-option active" data-format="mp4">MP4 Video</button>
+                                    <button class="format-option" data-format="mp3">MP3 Audio</button>
+                                </div>
+                                <select id="formatSelect" style="display: none;">
+                                    <option value="mp4">MP4</option>
+                                    <option value="mp3">MP3</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button id="downloadBtn" class="btn-download">
+                            <i class="fas fa-download"></i>
+                            <span>Download Now</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="progressContainer" class="progress-area" style="display: none;">
+                    <div class="progress-ring">
+                        <svg width="80" height="80" viewBox="0 0 80 80">
+                            <circle cx="40" cy="40" r="35" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="4"/>
+                            <circle cx="40" cy="40" r="35" fill="none" stroke="url(#gradientStroke)" stroke-width="4" stroke-linecap="round" id="progressRing" style="stroke-dasharray: 220; stroke-dashoffset: 220; transform: rotate(-90deg); transform-origin: center;"/>
+                            <defs>
+                                <linearGradient id="gradientStroke" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#8b5cf6"/>
+                                    <stop offset="100%" stop-color="#ec4899"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <span class="progress-percent" id="progressPercent">0%</span>
+                    </div>
+                    <div class="progress-info">
+                        <h4 id="progressStatus">Processing your request...</h4>
+                        <p>Please wait while we prepare your download</p>
+                    </div>
+                </div>
+
+                <div id="successBox" class="success-box" style="display: none;">
+                    <div class="success-icon">
+                        <i class="fas fa-check"></i>
+                        <div class="success-ring"></div>
+                    </div>
+                    <h3>Ready to Save!</h3>
+                    <p>Your video has been processed successfully</p>
+                    <div class="success-actions">
+                        <a id="downloadFileLink" href="#" class="btn-success">
+                            <i class="fas fa-save"></i>
+                            <span>Save Video</span>
+                        </a>
+                        <button onclick="resetDownloader()" class="btn-outline">
+                            <i class="fas fa-download"></i>
+                            <span>Download Another</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="errorBox" class="error-box" style="display: none;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <h3>Download Failed</h3>
+                    <p id="errorMsg"></p>
+                    <button onclick="resetDownloader()" class="btn-outline">Try Again</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Grid -->
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon"><i class="fas fa-bolt"></i></div>
+                <h3>Lightning Fast</h3>
+                <p>Optimized servers for the fastest download speeds available</p>
+                <div class="feature-bg"></div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+                <h3>100% Secure</h3>
+                <p>Your privacy is our priority with encrypted connections</p>
+                <div class="feature-bg"></div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon"><i class="fas fa-infinity"></i></div>
+                <h3>Unlimited</h3>
+                <p>No limits on downloads, file sizes, or daily usage</p>
+                <div class="feature-bg"></div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
+                <h3>Mobile Ready</h3>
+                <p>Fully responsive design that works perfectly on all devices</p>
+                <div class="feature-bg"></div>
+            </div>
+        </div>
+
+        <!-- CTA Section -->
+        <div class="cta-section">
+            <div class="cta-content">
+                <h2>Ready to start downloading?</h2>
+                <p>Join millions of users who trust VortexDownload for their video needs</p>
+                <div class="cta-buttons">
+                    <button class="btn-primary cta-btn" id="getStartedBtn">
+                        <i class="fas fa-rocket"></i>
+                        <span>Get Started Now</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <button class="btn-outline cta-btn" id="learnMoreBtn">
+                        <i class="fas fa-play-circle"></i>
+                        <span>Watch Demo</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Testimonials -->
+        <div class="testimonials">
+            <h2>What Our Users Say</h2>
+            <div class="testimonial-grid">
+                <div class="testimonial">
+                    <div class="testimonial-avatar">
+                        <img src="https://ui-avatars.com/api/?background=8b5cf6&color=fff&name=JD" alt="">
+                    </div>
+                    <div class="testimonial-stars">★★★★★</div>
+                    <p>"Best video downloader I've ever used! Fast, reliable, and completely free."</p>
+                    <h4>John Doe</h4>
+                    <span>Content Creator</span>
+                </div>
+                <div class="testimonial">
+                    <div class="testimonial-avatar">
+                        <img src="https://ui-avatars.com/api/?background=8b5cf6&color=fff&name=JS" alt="">
+                    </div>
+                    <div class="testimonial-stars">★★★★★</div>
+                    <p>"Downloading from Instagram has never been easier. Highly recommended!"</p>
+                    <h4>Jane Smith</h4>
+                    <span>Social Media Manager</span>
+                </div>
+                <div class="testimonial">
+                    <div class="testimonial-avatar">
+                        <img src="https://ui-avatars.com/api/?background=8b5cf6&color=fff&name=MK" alt="">
+                    </div>
+                    <div class="testimonial-stars">★★★★★</div>
+                    <p>"The 4K quality downloads are amazing. This tool is a game-changer!"</p>
+                    <h4>Mike Johnson</h4>
+                    <span>Video Editor</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-top">
+                <div class="footer-brand">
+                    <div class="footer-logo">
+                        <i class="fas fa-download"></i>
+                        <span>VortexDownload</span>
+                    </div>
+                    <p class="footer-description">The most advanced video downloading platform. Download videos from anywhere, in any quality.</p>
+                    <div class="social-links">
+                        <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-github"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-discord"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-youtube"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>Product</h4>
+                        <ul>
+                            <li><a href="#">Features</a></li>
+                            <li><a href="#">Pricing</a></li>
+                            <li><a href="#">API</a></li>
+                            <li><a href="#">Changelog</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Resources</h4>
+                        <ul>
+                            <li><a href="#">Documentation</a></li>
+                            <li><a href="#">Help Center</a></li>
+                            <li><a href="#">Blog</a></li>
+                            <li><a href="#">Community</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Company</h4>
+                        <ul>
+                            <li><a href="about.html">About Us</a></li>
+                            <li><a href="contact.html">Contact</a></li>
+                            <li><a href="#">Careers</a></li>
+                            <li><a href="#">Press</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Legal</h4>
+                        <ul>
+                            <li><a href="terms.html">Terms & Conditions</a></li>
+                            <li><a href="privacy.html">Privacy Policy</a></li>
+                            <li><a href="#">Cookie Policy</a></li>
+                            <li><a href="#">Security</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <div class="copyright">
+                    <i class="far fa-copyright"></i>
+                    <span>2026 VortexDownload. All rights reserved.</span>
+                </div>
+                <div class="footer-bottom-links">
+                    <a href="terms.html">Terms</a>
+                    <a href="privacy.html">Privacy</a>
+                    <a href="contact.html">Contact</a>
+                </div>
+                <div class="language-selector">
+                    <i class="fas fa-globe"></i>
+                    <select>
+                        <option>English</option>
+                        <option>Spanish</option>
+                        <option>French</option>
+                        <option>German</option>
+                        <option>Japanese</option>
+                        <option>Korean</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <!-- Razorpay Script -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
