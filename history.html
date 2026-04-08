@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download History - VortexDownload</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .history-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .history-title h1 {
+            font-size: 32px;
+            font-weight: 700;
+        }
+        .history-title p {
+            color: var(--gray);
+            margin-top: 8px;
+        }
+        .clear-btn {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            padding: 10px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .clear-btn:hover {
+            background: var(--danger);
+            color: white;
+        }
+        .history-table {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        .history-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .history-table th {
+            text-align: left;
+            padding: 16px 20px;
+            background: rgba(255,255,255,0.05);
+            color: var(--gray);
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .history-table td {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
+            color: var(--light);
+        }
+        .history-table tr:hover {
+            background: rgba(255,255,255,0.03);
+        }
+        .platform-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+        }
+        .empty-history {
+            text-align: center;
+            padding: 60px;
+            color: var(--gray);
+        }
+        .empty-history i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+        .delete-btn:hover {
+            transform: scale(1.1);
+        }
+        @media (max-width: 768px) {
+            .history-table {
+                overflow-x: auto;
+            }
+            .history-table table {
+                min-width: 600px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"><div class="bg-gradient"></div><div class="bg-gradient-2"></div><div class="bg-gradient-3"></div></div>
+    <div class="cursor"></div><div class="cursor-follower"></div>
+    <canvas id="particleCanvas"></canvas>
+
+    <header class="header">
+        <div class="header-container">
+            <div class="logo"><div class="logo-icon-glow"><i class="fas fa-download"></i></div><div class="logo-text">Vortex<span>Download</span></div><div class="logo-badge">PRO</div></div>
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-link"><i class="fas fa-home"></i><span>Home</span></a>
+                <a href="#" class="nav-link" id="premiumNavBtn"><i class="fas fa-crown"></i><span>Features</span></a>
+                <a href="history.html" class="nav-link active"><i class="fas fa-history"></i><span>History</span></a>
+                <a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i><span>About</span></a>
+            </nav>
+            <div class="header-actions">
+                <button class="icon-btn" id="premiumBtn"><i class="fas fa-crown"></i></button>
+                <div class="auth-buttons" id="authButtons"><button class="btn-login" id="loginBtn">Sign In</button><button class="btn-signup" id="signupBtn">Sign Up</button></div>
+                <div class="user-menu" style="display: none;" id="userMenu"><img src="" alt="" class="user-avatar" id="userAvatar"><div class="user-dropdown"><div class="user-info"><strong id="userName">John Doe</strong><span id="userTier">Free Member</span></div><div class="dropdown-divider"></div><a href="history.html"><i class="fas fa-history"></i>Download History</a><a href="#"><i class="fas fa-cog"></i>Settings</a><div class="dropdown-divider"></div><a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i>Logout</a></div></div>
+                <button class="mobile-menu-btn" id="mobileMenuBtn"><i class="fas fa-bars"></i></button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="history-container">
+            <div class="history-header">
+                <div class="history-title"><h1>📋 Download History</h1><p>View all your downloaded videos</p></div>
+                <button class="clear-btn" id="clearHistoryBtn"><i class="fas fa-trash-alt"></i> Clear All</button>
+            </div>
+            <div class="history-table" id="historyTable"></div>
+        </div>
+    </main>
+
+    <footer class="footer"><div class="footer-container"><div class="footer-bottom"><div class="copyright"><i class="far fa-copyright"></i><span>2024 VortexDownload. All rights reserved.</span></div></div></div></footer>
+
+    <script>
+        // Copy the same modal and auth functions from index.html
+        // For brevity, include the same script.js content
+        let downloadHistory = JSON.parse(localStorage.getItem('downloadHistory') || '[]');
+        
+        function renderHistory() {
+            const container = document.getElementById('historyTable');
+            if (!downloadHistory.length) {
+                container.innerHTML = `<div class="empty-history"><i class="fas fa-history"></i><h3>No download history</h3><p>Your downloaded videos will appear here</p><a href="index.html" class="btn-primary" style="display: inline-block; margin-top: 20px; padding: 12px 24px;">Start Downloading</a></div>`;
+                return;
+            }
+            
+            const platformIcons = { YouTube: 'fab fa-youtube', Instagram: 'fab fa-instagram', Facebook: 'fab fa-facebook', TikTok: 'fab fa-tiktok', Twitter: 'fab fa-twitter', Pinterest: 'fab fa-pinterest' };
+            
+            let html = `<table><thead><tr><th>#</th><th>Video Title</th><th>Platform</th><th>Date</th><th>Action</th></tr></thead><tbody>`;
+            downloadHistory.forEach((item, index) => {
+                const date = new Date(item.date).toLocaleDateString();
+                const icon = platformIcons[item.platform] || 'fas fa-video';
+                html += `<tr>
+                    <td>${index + 1}</td>
+                    <td><i class="${icon}" style="margin-right: 10px; color: #7c3aed;"></i>${item.title.substring(0, 50)}${item.title.length > 50 ? '...' : ''}</td>
+                    <td>${item.platform}</td>
+                    <td>${date}</td>
+                    <td><button class="delete-btn" data-id="${item.id}"><i class="fas fa-trash-alt"></i></button></td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = parseInt(btn.dataset.id);
+                    downloadHistory = downloadHistory.filter(i => i.id !== id);
+                    localStorage.setItem('downloadHistory', JSON.stringify(downloadHistory));
+                    renderHistory();
+                });
+            });
+        }
+        
+        document.getElementById('clearHistoryBtn')?.addEventListener('click', () => {
+            if (confirm('Are you sure you want to clear all download history?')) {
+                downloadHistory = [];
+                localStorage.setItem('downloadHistory', JSON.stringify(downloadHistory));
+                renderHistory();
+            }
+        });
+        
+        renderHistory();
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>
