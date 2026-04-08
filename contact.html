@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - VortexDownload</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .contact-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+        .contact-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        .contact-header h1 {
+            font-size: 40px;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+        .contact-header p {
+            color: var(--gray);
+        }
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 40px;
+        }
+        .contact-info {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 30px;
+        }
+        .contact-info h3 {
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .info-item i {
+            width: 40px;
+            height: 40px;
+            background: rgba(124,58,237,0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: var(--primary);
+        }
+        .info-item div strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .info-item div p, .info-item div a {
+            color: var(--gray);
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .contact-form {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 30px;
+        }
+        .contact-form h3 {
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--light);
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(124,58,237,0.4);
+        }
+        .faq-section {
+            margin-top: 50px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 30px;
+        }
+        .faq-section h3 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .faq-item {
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .faq-question {
+            font-weight: 600;
+            margin-bottom: 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+        }
+        .faq-answer {
+            color: var(--gray);
+            font-size: 14px;
+            line-height: 1.6;
+            display: none;
+        }
+        .faq-answer.show {
+            display: block;
+        }
+        @media (max-width: 768px) {
+            .contact-grid { grid-template-columns: 1fr; }
+            .contact-header h1 { font-size: 32px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"><div class="bg-gradient"></div><div class="bg-gradient-2"></div><div class="bg-gradient-3"></div></div>
+    <div class="cursor"></div><div class="cursor-follower"></div>
+    <canvas id="particleCanvas"></canvas>
+
+    <header class="header">
+        <div class="header-container">
+            <div class="logo"><div class="logo-icon-glow"><i class="fas fa-download"></i></div><div class="logo-text">Vortex<span>Download</span></div><div class="logo-badge">PRO</div></div>
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-link"><i class="fas fa-home"></i><span>Home</span></a>
+                <a href="history.html" class="nav-link"><i class="fas fa-history"></i><span>History</span></a>
+                <a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i><span>About</span></a>
+            </nav>
+            <div class="header-actions">
+                <div class="auth-buttons" id="authButtons"><button class="btn-login" id="loginBtn">Sign In</button><button class="btn-signup" id="signupBtn">Sign Up</button></div>
+                <div class="user-menu" style="display: none;" id="userMenu"><img src="" alt="" class="user-avatar" id="userAvatar"><div class="user-dropdown"><div class="user-info"><strong id="userName">John Doe</strong><span id="userTier">Free Member</span></div><div class="dropdown-divider"></div><a href="history.html"><i class="fas fa-history"></i>Download History</a><a href="#"><i class="fas fa-cog"></i>Settings</a><div class="dropdown-divider"></div><a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i>Logout</a></div></div>
+                <button class="mobile-menu-btn" id="mobileMenuBtn"><i class="fas fa-bars"></i></button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="contact-container">
+            <div class="contact-header">
+                <h1>Get in <span class="gradient-text">Touch</span></h1>
+                <p>Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.</p>
+            </div>
+
+            <div class="contact-grid">
+                <div class="contact-info">
+                    <h3>Contact Information</h3>
+                    <div class="info-item"><i class="fas fa-envelope"></i><div><strong>Email</strong><p>support@vortexdownload.com</p></div></div>
+                    <div class="info-item"><i class="fab fa-twitter"></i><div><strong>Twitter</strong><p>@vortexdownload</p></div></div>
+                    <div class="info-item"><i class="fab fa-github"></i><div><strong>GitHub</strong><p>github.com/vortexdownload</p></div></div>
+                    <div class="info-item"><i class="fab fa-discord"></i><div><strong>Discord</strong><p>Join our community</p></div></div>
+                </div>
+
+                <div class="contact-form">
+                    <h3>Send us a message</h3>
+                    <form id="contactForm">
+                        <div class="form-group"><input type="text" id="contactName" placeholder="Your Name" required></div>
+                        <div class="form-group"><input type="email" id="contactEmail" placeholder="Your Email" required></div>
+                        <div class="form-group"><input type="text" id="contactSubject" placeholder="Subject" required></div>
+                        <div class="form-group"><textarea id="contactMessage" placeholder="Your Message" required></textarea></div>
+                        <button type="submit" class="submit-btn"><i class="fas fa-paper-plane"></i> Send Message</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="faq-section">
+                <h3>Frequently Asked Questions</h3>
+                <div class="faq-item"><div class="faq-question">How do I download a video? <i class="fas fa-chevron-down"></i></div><div class="faq-answer">Simply paste the video URL in the input box on the homepage, click "Analyze", then click "Download Now".</div></div>
+                <div class="faq-item"><div class="faq-question">Is VortexDownload free? <i class="fas fa-chevron-down"></i></div><div class="faq-answer">Yes! VortexDownload is completely free with no hidden fees.</div></div>
+                <div class="faq-item"><div class="faq-question">What platforms are supported? <i class="fas fa-chevron-down"></i></div><div class="faq-answer">YouTube, Instagram, TikTok, Facebook, Twitter, Pinterest, Reddit, and 1000+ more platforms.</div></div>
+                <div class="faq-item"><div class="faq-question">Is downloading videos legal? <i class="fas fa-chevron-down"></i></div><div class="faq-answer">You should only download content you have permission to download. Respect copyright laws.</div></div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer"><div class="footer-container"><div class="footer-bottom"><div class="copyright"><i class="far fa-copyright"></i><span>2024 VortexDownload. All rights reserved.</span></div></div></div></footer>
+
+    <script>
+        document.getElementById('contactForm')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('Thank you for your message! We will get back to you soon.');
+            e.target.reset();
+        });
+        
+        document.querySelectorAll('.faq-question').forEach(q => {
+            q.addEventListener('click', () => {
+                const answer = q.parentElement.querySelector('.faq-answer');
+                answer.classList.toggle('show');
+                q.querySelector('i').classList.toggle('fa-chevron-down');
+                q.querySelector('i').classList.toggle('fa-chevron-up');
+            });
+        });
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>
