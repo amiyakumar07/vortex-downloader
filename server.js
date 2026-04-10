@@ -18,6 +18,11 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ==================== LOGGING SETUP ====================
+const LOGS_DIR = path.join(__dirname, 'logs');
+if (!fs.existsSync(LOGS_DIR)) {
+    fs.mkdirSync(LOGS_DIR, { recursive: true });
+}
+
 const logger = winston.createLogger({
     level: process.env.LOG_LEVEL || 'info',
     format: winston.format.combine(
@@ -25,8 +30,8 @@ const logger = winston.createLogger({
         winston.format.json()
     ),
     transports: [
-        new winston.transports.File({ filename: '/var/log/vortex-downloader/error.log', level: 'error' }),
-        new winston.transports.File({ filename: '/var/log/vortex-downloader/combined.log' })
+        new winston.transports.File({ filename: path.join(LOGS_DIR, 'error.log'), level: 'error' }),
+        new winston.transports.File({ filename: path.join(LOGS_DIR, 'combined.log') })
     ]
 });
 
