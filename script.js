@@ -1,5 +1,5 @@
 // ==================== API CONFIGURATION ====================
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://vortex-downloader-1.onrender.com/api';
 let authToken = localStorage.getItem('authToken') || null;
 let currentUser = null;
 
