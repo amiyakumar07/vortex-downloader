@@ -1,6 +1,8 @@
 // ==================== API CONFIGURATION ====================
-// CHANGE THIS TO YOUR RENDER BACKEND URL
+// ✅ CORRECT - Using your LIVE Render backend
 const API_URL = 'https://vortex-downloader-1.onrender.com/api';
+
+console.log('🔗 Connected to backend:', API_URL);
 
 let authToken = localStorage.getItem('authToken') || null;
 let currentUser = null;
@@ -11,6 +13,19 @@ let pollInterval = null;
 let currentQuality = 'highest';
 let currentFormat = 'mp4';
 let downloadHistory = JSON.parse(localStorage.getItem('downloadHistory') || '[]');
+
+// ==================== TEST BACKEND CONNECTION ====================
+async function testBackendConnection() {
+    try {
+        const response = await fetch(`${API_URL}/health`);
+        const data = await response.json();
+        console.log('✅ Backend connected:', data);
+        return true;
+    } catch (error) {
+        console.error('❌ Backend connection failed:', error);
+        return false;
+    }
+}
 
 // ==================== AUTHENTICATION FUNCTIONS ====================
 
@@ -269,6 +284,7 @@ document.getElementById('fetchInfoBtn').addEventListener('click', async () => {
     }
     
     console.log('🔍 Fetching info for URL:', url);
+    console.log('📡 API_URL:', API_URL);
     
     const fetchBtn = document.getElementById('fetchInfoBtn');
     const originalText = fetchBtn.innerHTML;
@@ -770,6 +786,14 @@ function initCursor() {
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 App initializing...');
     console.log('🔗 API_URL:', API_URL);
+    
+    // Test backend connection
+    const isConnected = await testBackendConnection();
+    if (!isConnected) {
+        console.error('⚠️ Cannot connect to backend. Please check if backend is running.');
+        showError('Cannot connect to server. Please try again later.');
+    }
+    
     checkSavedUser();
     await verifyToken();
     initParticles();
