@@ -1,5 +1,7 @@
 // ==================== API CONFIGURATION ====================
+// CHANGE THIS TO YOUR RENDER BACKEND URL
 const API_URL = 'https://vortex-downloader-1.onrender.com/api';
+
 let authToken = localStorage.getItem('authToken') || null;
 let currentUser = null;
 
@@ -246,12 +248,11 @@ document.querySelectorAll('.quality-option').forEach(btn => {
     });
 });
 
-// Format selector buttons - already in your code
 document.querySelectorAll('.format-option').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.format-option').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        currentFormat = btn.dataset.format;  // 'mp4' or 'mp3'
+        currentFormat = btn.dataset.format;
         document.getElementById('formatSelect').value = currentFormat;
         console.log('🎚️ Format changed to:', currentFormat);
     });
@@ -768,6 +769,7 @@ function initCursor() {
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 App initializing...');
+    console.log('🔗 API_URL:', API_URL);
     checkSavedUser();
     await verifyToken();
     initParticles();
