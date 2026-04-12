@@ -6,14 +6,12 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 const fs = require('fs');
-const { exec } = require('child_process');
-const util = require('util');
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const winston = require('winston');
+const axios = require('axios');
 
-const execPromise = util.promisify(exec);
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -77,11 +75,6 @@ app.use('/downloads', express.static(DOWNLOAD_DIR));
 const downloads = new Map();
 const users = new Map();
 const USERS_FILE = path.join(__dirname, 'users.json');
-
-// Paths for downloaders
-const YT_DLP_PATH = 'C:\\Users\\sahoo\\AppData\\Local\\Python\\pythoncore-3.14-64\\Scripts\\yt-dlp.exe';
-const UNIVERSAL_API = process.env.UNIVERSAL_API || 'http://localhost:3000';
-const PYTHON_PATH = 'C:\\Users\\sahoo\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe';
 
 // JWT Secret
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -201,72 +194,9 @@ function formatBytes(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-// ==================== yt-dlp FUNCTIONS ====================
-async function getInfoWithYtDlp(url) {
-    return new Promise((resolve, reject) => {
-        let command = `"${YT_DLP_PATH}" -j --flat-playlist "${url}"`;
-        
-        exec(command, { timeout: 30000 }, (error, stdout) => {
-            if (error || !stdout) {
-                const fallbackCommand = `"${PYTHON_PATH}" -m yt_dlp -j --flat-playlist "${url}"`;
-                exec(fallbackCommand, { timeout: 30000 }, (fallbackError, fallbackStdout) => {
-                    if (fallbackError || !fallbackStdout) {
-                        reject(new Error('Failed to fetch video info'));
-                    } else {
-                        try {
-                            resolve(JSON.parse(fallbackStdout));
-                        } catch (e) {
-                            reject(e);
-                        }
-                    }
-                });
-            } else {
-                try {
-                    resolve(JSON.parse(stdout));
-                } catch (e) {
-                    reject(e);
-                }
-            }
-        });
-    });
-}
-
-async function downloadWithYtDlp(url, outputPath, format) {
-    return new Promise((resolve, reject) => {
-        let command;
-        if (format === 'mp3') {
-            command = `"${YT_DLP_PATH}" -x --audio-format mp3 --audio-quality 0 -o "${outputPath}" "${url}"`;
-        } else {
-            command = `"${YT_DLP_PATH}" -f "best[ext=mp4]/best" --merge-output-format mp4 -o "${outputPath}" "${url}"`;
-        }
-        
-        exec(command, { timeout: 300000 }, (error) => {
-            if (error) {
-                let fallbackCommand;
-                if (format === 'mp3') {
-                    fallbackCommand = `"${PYTHON_PATH}" -m yt_dlp -x --audio-format mp3 --audio-quality 0 -o "${outputPath}" "${url}"`;
-                } else {
-                    fallbackCommand = `"${PYTHON_PATH}" -m yt_dlp -f "best[ext=mp4]/best" --merge-output-format mp4 -o "${outputPath}" "${url}"`;
-                }
-                
-                exec(fallbackCommand, { timeout: 300000 }, (fallbackError) => {
-                    if (fallbackError || !fs.existsSync(outputPath) || fs.statSync(outputPath).size === 0) {
-                        reject(new Error('Download failed'));
-                    } else {
-                        resolve(outputPath);
-                    }
-                });
-            } else if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 0) {
-                resolve(outputPath);
-            } else {
-                reject(new Error('File not created'));
-            }
-        });
-    });
-}
-
+// ==================== PINTEREST FUNCTIONS ====================
 async function getPinterestInfo(url) {
-    const response = await fetch(`${UNIVERSAL_API}/api/pinterest/download?url=${encodeURIComponent(url)}`);
+    const response = await fetch(`http://localhost:3000/api/pinterest/download?url=${encodeURIComponent(url)}`);
     const data = await response.json();
     
     if (data.success && data.data) {
@@ -281,7 +211,7 @@ async function getPinterestInfo(url) {
 }
 
 async function downloadPinterest(url, outputPath) {
-    const response = await fetch(`${UNIVERSAL_API}/api/pinterest/download?url=${encodeURIComponent(url)}`);
+    const response = await fetch(`http://localhost:3000/api/pinterest/download?url=${encodeURIComponent(url)}`);
     const data = await response.json();
     
     if (data.success && data.data && data.data.downloads && data.data.downloads.length > 0) {
@@ -443,14 +373,21 @@ app.post('/api/auth/logout', (req, res) => {
     res.json({ success: true, message: 'Logged out successfully' });
 });
 
-// ==================== VIDEO DOWNLOAD ENDPOINTS ====================
+// ==================== VIDEO DOWNLOAD ENDPOINTS (USING API) ====================
+
+// Get video info using free API
 app.post('/api/download/info', async (req, res) => {
     const { url } = req.body;
-    if (!url) return res.status(400).json({ error: 'URL is required' });
+    
+    if (!url) {
+        return res.status(400).json({ error: 'URL is required' });
+    }
     
     try {
         const platform = detectPlatform(url);
-        if (!platform) return res.status(400).json({ error: 'Unsupported platform' });
+        if (!platform) {
+            return res.status(400).json({ error: 'Unsupported platform' });
+        }
         
         const emoji = getPlatformEmoji(platform);
         console.log(`\n🔍 ${emoji} FETCHING INFO for ${platform.toUpperCase()} ${emoji}`);
@@ -458,28 +395,28 @@ app.post('/api/download/info', async (req, res) => {
         
         let info;
         
+        // Handle Pinterest separately
         if (platform === 'pinterest') {
             info = await getPinterestInfo(url);
         } else {
-            const ytInfo = await getInfoWithYtDlp(url);
-            info = {
-                title: ytInfo.title || ytInfo.fulltitle || 'Untitled Video',
-                duration: ytInfo.duration || 0,
-                thumbnail: ytInfo.thumbnail || ytInfo.thumbnails?.[0]?.url,
-                uploader: ytInfo.uploader || ytInfo.channel || 'Unknown',
-                views: ytInfo.view_count || 0
-            };
+            // Use free video download API for YouTube, Instagram, TikTok, Twitter
+            const response = await axios.get(`https://p.oceansaver.in/ajax/download.php?url=${encodeURIComponent(url)}`);
             
-            if (info.thumbnail && info.thumbnail.startsWith('//')) {
-                info.thumbnail = 'https:' + info.thumbnail;
-            }
-            if (info.thumbnail && platform === 'youtube') {
-                info.thumbnail = info.thumbnail.replace('hqdefault', 'maxresdefault');
+            if (response.data && response.data.video) {
+                info = {
+                    title: response.data.title || 'Video Title',
+                    duration: response.data.duration || 0,
+                    thumbnail: response.data.image || `https://via.placeholder.com/480x360/8b5cf6/ffffff?text=${platform}`,
+                    uploader: 'Unknown',
+                    views: 0
+                };
+            } else {
+                throw new Error('No video found in API response');
             }
         }
         
         console.log(`✅ ${emoji} Successfully fetched: "${info.title?.substring(0, 50)}..."`);
-        console.log(`⏱️ Duration: ${info.duration}s | 👁️ Views: ${info.views?.toLocaleString() || 'N/A'}\n`);
+        console.log(`⏱️ Duration: ${info.duration}s\n`);
         
         res.json({
             success: true,
@@ -492,19 +429,26 @@ app.post('/api/download/info', async (req, res) => {
                 views: info.views || 0
             }
         });
+        
     } catch (error) {
         console.error(`❌ Info fetch error: ${error.message}`);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: 'Failed to fetch video info: ' + error.message });
     }
 });
 
+// Download video using free API
 app.post('/api/download', authenticateToken, async (req, res) => {
     const { url, format = 'mp4' } = req.body;
-    if (!url) return res.status(400).json({ error: 'URL is required' });
+    
+    if (!url) {
+        return res.status(400).json({ error: 'URL is required' });
+    }
     
     try {
         const platform = detectPlatform(url);
-        if (!platform) return res.status(400).json({ error: 'Unsupported platform' });
+        if (!platform) {
+            return res.status(400).json({ error: 'Unsupported platform' });
+        }
         
         const emoji = getPlatformEmoji(platform);
         console.log(`\n📥 ${emoji} DOWNLOAD REQUEST ${emoji}`);
@@ -512,6 +456,7 @@ app.post('/api/download', authenticateToken, async (req, res) => {
         console.log(`🎬 Platform: ${platform.toUpperCase()}`);
         console.log(`📎 URL: ${url.substring(0, 80)}...`);
         
+        // Update user download count
         const user = Array.from(users.values()).find(u => u.id === req.userId);
         if (user) {
             user.downloadCount++;
@@ -519,6 +464,56 @@ app.post('/api/download', authenticateToken, async (req, res) => {
             saveUsers();
             console.log(`📊 User ${user.email} total downloads: ${user.downloadCount}`);
         }
+        
+        let videoUrl;
+        
+        // Handle Pinterest separately
+        if (platform === 'pinterest') {
+            const jobId = uuidv4();
+            const filename = `${jobId}.mp4`;
+            const outputPath = path.join(DOWNLOAD_DIR, filename);
+            
+            downloads.set(jobId, {
+                id: jobId,
+                status: 'downloading',
+                filename: filename,
+                filepath: outputPath,
+                platform: platform
+            });
+            
+            // Download Pinterest video
+            (async () => {
+                try {
+                    await downloadPinterest(url, outputPath);
+                    const download = downloads.get(jobId);
+                    if (download) {
+                        download.status = 'completed';
+                        downloads.set(jobId, download);
+                    }
+                    console.log(`✅ Pinterest download complete`);
+                } catch (err) {
+                    console.error(`❌ Pinterest download failed: ${err.message}`);
+                    const download = downloads.get(jobId);
+                    if (download) {
+                        download.status = 'failed';
+                        download.error = err.message;
+                        downloads.set(jobId, download);
+                    }
+                }
+            })();
+            
+            return res.json({ success: true, jobId: jobId });
+        }
+        
+        // For other platforms, get download URL from API
+        const response = await axios.get(`https://p.oceansaver.in/ajax/download.php?url=${encodeURIComponent(url)}`);
+        
+        if (!response.data || !response.data.video) {
+            throw new Error('Could not get video URL from API');
+        }
+        
+        videoUrl = response.data.video;
+        console.log(`🎬 Video URL obtained`);
         
         const jobId = uuidv4();
         const filename = `${jobId}.${format === 'mp3' ? 'mp3' : 'mp4'}`;
@@ -535,43 +530,44 @@ app.post('/api/download', authenticateToken, async (req, res) => {
         console.log(`🆔 Job ID: ${jobId.substring(0, 8)}...`);
         console.log(`📄 Format: ${format.toUpperCase()}\n`);
         
-        (async () => {
-            try {
-                if (platform === 'pinterest') {
-                    await downloadPinterest(url, outputPath);
-                } else {
-                    await downloadWithYtDlp(url, outputPath, format);
-                }
-                
-                if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 0) {
-                    const size = formatBytes(fs.statSync(outputPath).size);
-                    console.log(`\n✅✅✅ DOWNLOAD COMPLETE! ✅✅✅`);
-                    console.log(`📁 Filename: ${filename}`);
-                    console.log(`📦 Size: ${size}`);
-                    console.log(`👤 User: ${req.userEmail}\n`);
-                    
-                    const download = downloads.get(jobId);
-                    if (download) {
-                        download.status = 'completed';
-                        downloads.set(jobId, download);
-                    }
-                } else {
-                    throw new Error('Download failed - file not created');
-                }
-            } catch (error) {
-                console.error(`\n❌ DOWNLOAD FAILED: ${error.message}\n`);
-                const download = downloads.get(jobId);
-                if (download) {
-                    download.status = 'failed';
-                    download.error = error.message;
-                    downloads.set(jobId, download);
-                }
+        // Download the video using axios stream
+        const writer = fs.createWriteStream(outputPath);
+        const videoResponse = await axios({
+            method: 'get',
+            url: videoUrl,
+            responseType: 'stream'
+        });
+        
+        videoResponse.data.pipe(writer);
+        
+        writer.on('finish', () => {
+            const size = formatBytes(fs.statSync(outputPath).size);
+            console.log(`\n✅✅✅ DOWNLOAD COMPLETE! ✅✅✅`);
+            console.log(`📁 Filename: ${filename}`);
+            console.log(`📦 Size: ${size}`);
+            console.log(`👤 User: ${req.userEmail}\n`);
+            
+            const download = downloads.get(jobId);
+            if (download) {
+                download.status = 'completed';
+                downloads.set(jobId, download);
             }
-        })();
+        });
+        
+        writer.on('error', (err) => {
+            console.error(`❌ Download write error: ${err.message}`);
+            const download = downloads.get(jobId);
+            if (download) {
+                download.status = 'failed';
+                download.error = err.message;
+                downloads.set(jobId, download);
+            }
+        });
         
         res.json({ success: true, jobId: jobId });
+        
     } catch (error) {
-        console.error('Download start error:', error);
+        console.error('❌ Download error:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
