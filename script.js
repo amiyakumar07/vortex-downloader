@@ -427,17 +427,23 @@ function startPolling(jobId) {
     
     pollInterval = setInterval(async () => {
         try {
+            console.log("🔍 Checking status for job:", jobId);
             const response = await fetch(`${API_URL}/status/${jobId}`);
             const status = await response.json();
+            console.log("📊 Status response:", status);
             
             updateProgress(status.progress || 0);
             
             if (status.state === 'completed') {
+                console.log("✅ COMPLETED! Stopping polling.");
                 clearInterval(pollInterval);
                 onDownloadComplete(status.result);
             } else if (status.state === 'failed') {
+                console.log("❌ FAILED!");
                 clearInterval(pollInterval);
                 onDownloadFailed(status.error);
+            } else {
+                console.log("⏳ Still processing... State:", status.state);
             }
         } catch (error) {
             console.error('Status check failed:', error);
