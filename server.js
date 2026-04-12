@@ -52,6 +52,21 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// ==================== CORS FIX FOR NGROK ====================
+// This ensures all responses have proper CORS headers
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+    next();
+});
+
 // Rate limiting
 const limiter = rateLimit({
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
@@ -576,9 +591,15 @@ app.post('/api/download', authenticateToken, async (req, res) => {
     }
 });
 
+// FIXED STATUS ENDPOINT WITH CORS HEADERS
 app.get('/api/status/:jobId', (req, res) => {
     const download = downloads.get(req.params.jobId);
     if (!download) return res.status(404).json({ error: 'Job not found' });
+    
+    // Add CORS headers
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
     
     res.json({
         state: download.status,
@@ -588,11 +609,17 @@ app.get('/api/status/:jobId', (req, res) => {
     });
 });
 
+// FIXED DOWNLOAD FILE ENDPOINT WITH CORS HEADERS
 app.get('/api/download/file/:jobId', (req, res) => {
     const download = downloads.get(req.params.jobId);
     if (!download || download.status !== 'completed') {
         return res.status(404).json({ error: 'File not found' });
     }
+    
+    // Add CORS headers
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
     
     const filePath = download.filepath;
     if (fs.existsSync(filePath)) {
@@ -604,6 +631,11 @@ app.get('/api/download/file/:jobId', (req, res) => {
 
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
+    // Add CORS headers
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    
     const healthcheck = {
         status: 'ok',
         uptime: process.uptime(),
