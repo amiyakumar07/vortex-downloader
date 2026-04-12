@@ -422,25 +422,34 @@ document.getElementById('downloadBtn')?.addEventListener('click', async () => {
     }
 });
 
+// FIXED startPolling function with debug logs
 function startPolling(jobId) {
     if (pollInterval) clearInterval(pollInterval);
     
+    console.log("🚀 Starting polling for job:", jobId);
+    
     pollInterval = setInterval(async () => {
         try {
+            console.log("🔍 Checking status for job:", jobId);
             const response = await fetch(`${API_URL}/status/${jobId}`);
             const status = await response.json();
+            console.log("📊 Status response:", status);
             
             updateProgress(status.progress || 0);
             
             if (status.state === 'completed') {
+                console.log("✅ COMPLETED! Stopping polling.");
                 clearInterval(pollInterval);
                 onDownloadComplete(status.result);
             } else if (status.state === 'failed') {
+                console.log("❌ FAILED!");
                 clearInterval(pollInterval);
                 onDownloadFailed(status.error);
+            } else {
+                console.log("⏳ Still processing... State:", status.state);
             }
         } catch (error) {
-            console.error('Status check failed:', error);
+            console.error('❌ Status check failed:', error);
         }
     }, 2000);
 }
@@ -463,7 +472,9 @@ function updateProgress(percent) {
     else statusText.textContent = 'Processing your file...';
 }
 
+// FIXED onDownloadComplete function
 function onDownloadComplete(result) {
+    console.log("🎉 onDownloadComplete called with result:", result);
     hideProgress();
     document.getElementById('videoInfo').style.display = 'none';
     
