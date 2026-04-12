@@ -54,7 +54,7 @@ app.use((req, res, next) => {
     next();
 });
 
-// Rate limiting
+// Rate limiting (ONLY ONE - removed duplicate)
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100,
@@ -62,20 +62,6 @@ const limiter = rateLimit({
     validate: { xForwardedForHeader: false }
 });
 app.use('/api/', limiter);
-
-// Rate limiting
-const limiter = rateLimit({
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
-    message: { error: 'Too many requests, please try again later.' },
-    standardHeaders: true,
-    legacyHeaders: false,
-});
-app.use('/api/', limiter);
-
-// Body parsing
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ==================== CONFIGURATION ====================
 const DOWNLOAD_DIR = path.join(__dirname, 'downloads');
@@ -587,16 +573,27 @@ app.post('/api/download', authenticateToken, async (req, res) => {
     }
 });
 
+// FIXED STATUS ENDPOINT - This will ensure frontend gets completion status
 app.get('/api/status/:jobId', (req, res) => {
     const download = downloads.get(req.params.jobId);
-    if (!download) return res.status(404).json({ error: 'Job not found' });
+    if (!download) {
+        return res.status(404).json({ error: 'Job not found' });
+    }
     
-    res.json({
+    // Add CORS headers
+    res.header('Access-Control-Allow-Origin', '*');
+    
+    const response = {
         state: download.status,
-        progress: download.status === 'completed' ? 100 : 50,
-        result: download.status === 'completed' ? { filename: download.filename } : null,
+        progress: download.status === 'completed' ? 100 : (download.status === 'failed' ? 0 : 50),
+        result: download.status === 'completed' ? { 
+            filename: download.filename 
+        } : null,
         error: download.error || null
-    });
+    };
+    
+    console.log(`📊 Status check for ${req.params.jobId}: ${download.status}`);
+    res.json(response);
 });
 
 app.get('/api/download/file/:jobId', (req, res) => {
