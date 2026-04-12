@@ -9,60 +9,23 @@ const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const winston = require('winston');
-const axios = require('axios');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ==================== LOGGING SETUP ====================
-const LOGS_DIR = path.join(__dirname, 'logs');
-if (!fs.existsSync(LOGS_DIR)) {
-    fs.mkdirSync(LOGS_DIR, { recursive: true });
-}
-
-const logger = winston.createLogger({
-    level: process.env.LOG_LEVEL || 'info',
-    format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.json()
-    ),
-    transports: [
-        new winston.transports.File({ filename: path.join(LOGS_DIR, 'error.log'), level: 'error' }),
-        new winston.transports.File({ filename: path.join(LOGS_DIR, 'combined.log') })
-    ]
-});
-
-if (process.env.NODE_ENV !== 'production') {
-    logger.add(new winston.transports.Console({
-        format: winston.format.simple()
-    }));
-}
-
 // ==================== SECURITY MIDDLEWARE ====================
 app.use(helmet());
-
-// CORS configuration
-app.use(cors({
-    origin: true,
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(cors({ origin: true, credentials: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Rate limiting
 const limiter = rateLimit({
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
-    message: { error: 'Too many requests, please try again later.' },
-    standardHeaders: true,
-    legacyHeaders: false,
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: { error: 'Too many requests, please try again later.' }
 });
 app.use('/api/', limiter);
-
-// Body parsing
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ==================== CONFIGURATION ====================
 const DOWNLOAD_DIR = path.join(__dirname, 'downloads');
@@ -76,13 +39,7 @@ const downloads = new Map();
 const users = new Map();
 const USERS_FILE = path.join(__dirname, 'users.json');
 
-// JWT Secret
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-    logger.error('FATAL: JWT_SECRET is not set in environment variables');
-    process.exit(1);
-}
-
+const JWT_SECRET = process.env.JWT_SECRET || 'vortex_super_secret_key_2024';
 const SALT_ROUNDS = 12;
 
 // ==================== PERSISTENT STORAGE ====================
@@ -91,17 +48,14 @@ function loadUsers() {
         try {
             const data = fs.readFileSync(USERS_FILE, 'utf8');
             const savedUsers = JSON.parse(data);
-            savedUsers.forEach(user => {
-                users.set(user.email, user);
-            });
+            savedUsers.forEach(user => users.set(user.email, user));
             console.log(`📂 Loaded ${users.size} users from file`);
-            return users.size;
         } catch (error) {
-            logger.error('Error loading users:', error);
-            return 0;
+            console.error('Error loading users:', error);
         }
+    } else {
+        console.log('📂 No existing users file, starting fresh');
     }
-    return 0;
 }
 
 function saveUsers() {
@@ -109,34 +63,28 @@ function saveUsers() {
         const usersArray = Array.from(users.values());
         fs.writeFileSync(USERS_FILE, JSON.stringify(usersArray, null, 2));
         console.log(`💾 Saved ${usersArray.length} users to file`);
-        return usersArray.length;
     } catch (error) {
-        logger.error('Error saving users:', error);
-        return 0;
+        console.error('Error saving users:', error);
     }
 }
 
-// Auto-cleanup old downloads
+// Auto-cleanup old downloads (every hour)
 setInterval(() => {
     const now = Date.now();
-    const CLEANUP_HOURS = parseInt(process.env.DOWNLOAD_CLEANUP_HOURS) || 24;
     fs.readdir(DOWNLOAD_DIR, (err, files) => {
         if (err) return;
         files.forEach(file => {
             const filePath = path.join(DOWNLOAD_DIR, file);
             fs.stat(filePath, (err, stats) => {
                 if (err) return;
-                if (now - stats.mtimeMs > CLEANUP_HOURS * 60 * 60 * 1000) {
-                    fs.unlink(filePath, () => {
-                        console.log(`🗑️ Cleaned up old file: ${file}`);
-                    });
+                if (now - stats.mtimeMs > 24 * 60 * 60 * 1000) {
+                    fs.unlink(filePath, () => console.log(`🗑️ Cleaned up old file: ${file}`));
                 }
             });
         });
     });
 }, 60 * 60 * 1000);
 
-// Load users on startup
 loadUsers();
 
 // ==================== HELPER FUNCTIONS ====================
@@ -153,19 +101,6 @@ function detectPlatform(url) {
         if (pattern.test(url)) return platform;
     }
     return null;
-}
-
-function getPlatformEmoji(platform) {
-    const emojis = {
-        youtube: '🎬',
-        instagram: '📸',
-        facebook: '📘',
-        tiktok: '🎵',
-        twitter: '🐦',
-        pinterest: '📌',
-        default: '🎥'
-    };
-    return emojis[platform] || emojis.default;
 }
 
 function authenticateToken(req, res, next) {
@@ -192,41 +127,6 @@ function formatBytes(bytes) {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-// ==================== PINTEREST FUNCTIONS ====================
-async function getPinterestInfo(url) {
-    const response = await fetch(`http://localhost:3000/api/pinterest/download?url=${encodeURIComponent(url)}`);
-    const data = await response.json();
-    
-    if (data.success && data.data) {
-        return {
-            title: data.data.title || 'Pinterest Video',
-            thumbnail: data.data.thumbnail,
-            duration: 0,
-            uploader: 'Pinterest'
-        };
-    }
-    throw new Error('No Pinterest media found');
-}
-
-async function downloadPinterest(url, outputPath) {
-    const response = await fetch(`http://localhost:3000/api/pinterest/download?url=${encodeURIComponent(url)}`);
-    const data = await response.json();
-    
-    if (data.success && data.data && data.data.downloads && data.data.downloads.length > 0) {
-        const videoDownload = data.data.downloads.find(d => d.format === 'MP4' || d.format === 'mp4');
-        const mediaUrl = videoDownload?.url || data.data.downloads[0].url;
-        
-        if (mediaUrl) {
-            const mediaResponse = await fetch(mediaUrl);
-            const arrayBuffer = await mediaResponse.arrayBuffer();
-            const buffer = Buffer.from(arrayBuffer);
-            fs.writeFileSync(outputPath, buffer);
-            return outputPath;
-        }
-    }
-    throw new Error('No downloadable media found');
 }
 
 // ==================== AUTHENTICATION ENDPOINTS ====================
@@ -284,7 +184,7 @@ app.post('/api/auth/signup', async (req, res) => {
         });
         
     } catch (error) {
-        logger.error('Signup error:', error);
+        console.error('Signup error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -330,7 +230,7 @@ app.post('/api/auth/login', async (req, res) => {
         });
         
     } catch (error) {
-        logger.error('Login error:', error);
+        console.error('Login error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -373,7 +273,7 @@ app.post('/api/auth/logout', (req, res) => {
     res.json({ success: true, message: 'Logged out successfully' });
 });
 
-// ==================== VIDEO DOWNLOAD ENDPOINTS (USING API) ====================
+// ==================== VIDEO DOWNLOAD ENDPOINTS ====================
 
 // Get video info using free API
 app.post('/api/download/info', async (req, res) => {
@@ -389,47 +289,30 @@ app.post('/api/download/info', async (req, res) => {
             return res.status(400).json({ error: 'Unsupported platform' });
         }
         
-        const emoji = getPlatformEmoji(platform);
-        console.log(`\n🔍 ${emoji} FETCHING INFO for ${platform.toUpperCase()} ${emoji}`);
-        console.log(`📎 URL: ${url.substring(0, 80)}...`);
+        console.log(`🔍 Fetching info for ${platform}: ${url.substring(0, 80)}...`);
         
-        let info;
+        // Use free video download API
+        const apiUrl = `https://p.oceansaver.in/ajax/download.php?url=${encodeURIComponent(url)}`;
+        const response = await fetch(apiUrl);
+        const data = await response.json();
         
-        // Handle Pinterest separately
-        if (platform === 'pinterest') {
-            info = await getPinterestInfo(url);
-        } else {
-            // Use free video download API for YouTube, Instagram, TikTok, Twitter
-            const response = await axios.get(`https://p.oceansaver.in/ajax/download.php?url=${encodeURIComponent(url)}`);
+        if (data && data.video) {
+            console.log(`✅ Successfully fetched: "${data.title?.substring(0, 50)}..."`);
             
-            if (response.data && response.data.video) {
-                info = {
-                    title: response.data.title || 'Video Title',
-                    duration: response.data.duration || 0,
-                    thumbnail: response.data.image || `https://via.placeholder.com/480x360/8b5cf6/ffffff?text=${platform}`,
-                    uploader: 'Unknown',
+            res.json({
+                success: true,
+                platform: platform,
+                info: {
+                    title: data.title || 'Video Title',
+                    duration: data.duration || 0,
+                    thumbnail: data.image || `https://via.placeholder.com/480x360/8b5cf6/ffffff?text=${platform}`,
+                    uploader: platform,
                     views: 0
-                };
-            } else {
-                throw new Error('No video found in API response');
-            }
+                }
+            });
+        } else {
+            throw new Error('No video found in API response');
         }
-        
-        console.log(`✅ ${emoji} Successfully fetched: "${info.title?.substring(0, 50)}..."`);
-        console.log(`⏱️ Duration: ${info.duration}s\n`);
-        
-        res.json({
-            success: true,
-            platform: platform,
-            info: {
-                title: info.title,
-                duration: info.duration,
-                thumbnail: info.thumbnail || `https://via.placeholder.com/480x360/6366f1/ffffff?text=${platform}`,
-                uploader: info.uploader || platform,
-                views: info.views || 0
-            }
-        });
-        
     } catch (error) {
         console.error(`❌ Info fetch error: ${error.message}`);
         res.status(500).json({ error: 'Failed to fetch video info: ' + error.message });
@@ -438,7 +321,7 @@ app.post('/api/download/info', async (req, res) => {
 
 // Download video using free API
 app.post('/api/download', authenticateToken, async (req, res) => {
-    const { url, format = 'mp4' } = req.body;
+    const { url } = req.body;
     
     if (!url) {
         return res.status(400).json({ error: 'URL is required' });
@@ -450,8 +333,7 @@ app.post('/api/download', authenticateToken, async (req, res) => {
             return res.status(400).json({ error: 'Unsupported platform' });
         }
         
-        const emoji = getPlatformEmoji(platform);
-        console.log(`\n📥 ${emoji} DOWNLOAD REQUEST ${emoji}`);
+        console.log(`\n📥 DOWNLOAD REQUEST`);
         console.log(`👤 User: ${req.userEmail}`);
         console.log(`🎬 Platform: ${platform.toUpperCase()}`);
         console.log(`📎 URL: ${url.substring(0, 80)}...`);
@@ -465,58 +347,20 @@ app.post('/api/download', authenticateToken, async (req, res) => {
             console.log(`📊 User ${user.email} total downloads: ${user.downloadCount}`);
         }
         
-        let videoUrl;
+        // Get video URL from API
+        const apiUrl = `https://p.oceansaver.in/ajax/download.php?url=${encodeURIComponent(url)}`;
+        const response = await fetch(apiUrl);
+        const data = await response.json();
         
-        // Handle Pinterest separately
-        if (platform === 'pinterest') {
-            const jobId = uuidv4();
-            const filename = `${jobId}.mp4`;
-            const outputPath = path.join(DOWNLOAD_DIR, filename);
-            
-            downloads.set(jobId, {
-                id: jobId,
-                status: 'downloading',
-                filename: filename,
-                filepath: outputPath,
-                platform: platform
-            });
-            
-            // Download Pinterest video
-            (async () => {
-                try {
-                    await downloadPinterest(url, outputPath);
-                    const download = downloads.get(jobId);
-                    if (download) {
-                        download.status = 'completed';
-                        downloads.set(jobId, download);
-                    }
-                    console.log(`✅ Pinterest download complete`);
-                } catch (err) {
-                    console.error(`❌ Pinterest download failed: ${err.message}`);
-                    const download = downloads.get(jobId);
-                    if (download) {
-                        download.status = 'failed';
-                        download.error = err.message;
-                        downloads.set(jobId, download);
-                    }
-                }
-            })();
-            
-            return res.json({ success: true, jobId: jobId });
-        }
-        
-        // For other platforms, get download URL from API
-        const response = await axios.get(`https://p.oceansaver.in/ajax/download.php?url=${encodeURIComponent(url)}`);
-        
-        if (!response.data || !response.data.video) {
+        if (!data || !data.video) {
             throw new Error('Could not get video URL from API');
         }
         
-        videoUrl = response.data.video;
+        const videoUrl = data.video;
         console.log(`🎬 Video URL obtained`);
         
         const jobId = uuidv4();
-        const filename = `${jobId}.${format === 'mp3' ? 'mp3' : 'mp4'}`;
+        const filename = `${jobId}.mp4`;
         const outputPath = path.join(DOWNLOAD_DIR, filename);
         
         downloads.set(jobId, {
@@ -528,19 +372,13 @@ app.post('/api/download', authenticateToken, async (req, res) => {
         });
         
         console.log(`🆔 Job ID: ${jobId.substring(0, 8)}...`);
-        console.log(`📄 Format: ${format.toUpperCase()}\n`);
         
-        // Download the video using axios stream
-        const writer = fs.createWriteStream(outputPath);
-        const videoResponse = await axios({
-            method: 'get',
-            url: videoUrl,
-            responseType: 'stream'
-        });
+        // Download the video
+        const videoResponse = await fetch(videoUrl);
+        const buffer = await videoResponse.arrayBuffer();
+        fs.writeFileSync(outputPath, Buffer.from(buffer));
         
-        videoResponse.data.pipe(writer);
-        
-        writer.on('finish', () => {
+        if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 0) {
             const size = formatBytes(fs.statSync(outputPath).size);
             console.log(`\n✅✅✅ DOWNLOAD COMPLETE! ✅✅✅`);
             console.log(`📁 Filename: ${filename}`);
@@ -552,22 +390,14 @@ app.post('/api/download', authenticateToken, async (req, res) => {
                 download.status = 'completed';
                 downloads.set(jobId, download);
             }
-        });
-        
-        writer.on('error', (err) => {
-            console.error(`❌ Download write error: ${err.message}`);
-            const download = downloads.get(jobId);
-            if (download) {
-                download.status = 'failed';
-                download.error = err.message;
-                downloads.set(jobId, download);
-            }
-        });
+        } else {
+            throw new Error('Download failed - file not created');
+        }
         
         res.json({ success: true, jobId: jobId });
         
     } catch (error) {
-        console.error('❌ Download error:', error.message);
+        console.error(`❌ Download error: ${error.message}`);
         res.status(500).json({ error: error.message });
     }
 });
@@ -599,18 +429,14 @@ app.get('/api/download/file/:jobId', (req, res) => {
 });
 
 // Health check endpoint
-app.get('/api/health', async (req, res) => {
-    const healthcheck = {
-        status: 'ok',
+app.get('/api/health', (req, res) => {
+    res.json({ 
+        status: 'ok', 
         uptime: process.uptime(),
         timestamp: new Date().toISOString(),
-        checks: {
-            memory: process.memoryUsage(),
-            downloads: downloads.size,
-            users: users.size
-        }
-    };
-    res.json(healthcheck);
+        downloads: downloads.size,
+        users: users.size
+    });
 });
 
 // ==================== START SERVER ====================
@@ -627,6 +453,6 @@ app.listen(PORT, () => {
     console.log(`║  🕐 Started    : ${startTime.toLocaleTimeString().padStart(20)}                              ║`);
     console.log('╚════════════════════════════════════════════════════════════════╝');
     console.log('');
-    
-    logger.info(`Server started on port ${PORT}`);
+    console.log(`📁 Downloads folder: ${DOWNLOAD_DIR}`);
+    console.log(`🚀 Server is ready to accept requests!\n`);
 });
