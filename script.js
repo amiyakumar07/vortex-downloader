@@ -1,4 +1,5 @@
-const API_URL = 'https://new-name-here.ngrok-free.dev/api';
+// ==================== API CONFIGURATION ====================
+const API_URL = 'https://lyricism-distress-trial.ngrok-free.dev/api';
 
 console.log('🔗 Connected to backend:', API_URL);
 
@@ -26,41 +27,52 @@ async function testBackendConnection() {
 }
 
 // ==================== AUTHENTICATION FUNCTIONS ====================
+
 async function signup(name, email, password) {
     try {
+        console.log('📝 Attempting signup for:', email);
+        
         const response = await fetch(`${API_URL}/auth/signup`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, email, password })
         });
+        
         const data = await response.json();
+        console.log('Signup response:', data);
         
         if (data.success) {
             authToken = data.token;
             currentUser = data.user;
             localStorage.setItem('authToken', authToken);
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            console.log('✅ Signup successful:', email);
             updateUIForLoggedInUser();
             return true;
         } else {
-            alert(data.error);
+            console.error('❌ Signup failed:', data.error);
+            alert(data.error || 'Signup failed. Please try again.');
             return false;
         }
     } catch (error) {
         console.error('Signup error:', error);
-        alert('Signup failed');
+        alert('Signup failed: ' + error.message);
         return false;
     }
 }
 
 async function login(email, password, remember) {
     try {
+        console.log('🔐 Attempting login for:', email);
+        
         const response = await fetch(`${API_URL}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
         });
+        
         const data = await response.json();
+        console.log('Login response:', data);
         
         if (data.success) {
             authToken = data.token;
@@ -69,76 +81,118 @@ async function login(email, password, remember) {
             if (remember) {
                 localStorage.setItem('currentUser', JSON.stringify(currentUser));
             }
+            console.log('✅ Login successful:', email);
             updateUIForLoggedInUser();
             return true;
         } else {
-            alert(data.error);
+            console.error('❌ Login failed:', data.error);
+            alert(data.error || 'Invalid email or password');
             return false;
         }
     } catch (error) {
         console.error('Login error:', error);
-        alert('Login failed');
+        alert('Login failed: ' + error.message);
         return false;
     }
 }
 
 async function logout() {
+    try {
+        await fetch(`${API_URL}/auth/logout`, { method: 'POST' });
+    } catch (error) {
+        console.error('Logout error:', error);
+    }
+    
     authToken = null;
     currentUser = null;
     localStorage.removeItem('authToken');
     localStorage.removeItem('currentUser');
+    console.log('👋 Logged out');
     updateUIForLoggedOutUser();
     alert('Logged out successfully');
 }
 
 async function verifyToken() {
     if (!authToken) return false;
+    
     try {
         const response = await fetch(`${API_URL}/auth/verify`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${authToken}` }
         });
+        
         const data = await response.json();
+        
         if (data.success) {
             currentUser = data.user;
+            console.log('✅ Token verified for:', currentUser?.email);
             updateUIForLoggedInUser();
             return true;
+        } else {
+            authToken = null;
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('currentUser');
+            return false;
         }
-        return false;
     } catch (error) {
+        console.error('Token verification error:', error);
         return false;
     }
 }
 
+// Update UI for logged in user
 function updateUIForLoggedInUser() {
+    console.log('🎨 Updating UI for logged in user:', currentUser);
+    
     const authButtons = document.getElementById('authButtons');
     const userMenu = document.getElementById('userMenu');
     const userName = document.getElementById('userName');
     const userTier = document.getElementById('userTier');
     const userAvatar = document.getElementById('userAvatar');
+    const dropdownUserName = document.getElementById('dropdownUserName');
+    const dropdownUserEmail = document.getElementById('dropdownUserEmail');
+    const dropdownAvatar = document.getElementById('dropdownAvatar');
     const sidebarUserName = document.getElementById('sidebarUserName');
     const sidebarUserStatus = document.getElementById('sidebarUserStatus');
+    const sidebarAvatar = document.querySelector('#sidebarAvatar img');
     const sidebarUserBadge = document.getElementById('sidebarUserBadge');
     const sidebarAuthActions = document.getElementById('sidebarAuthActions');
     const sidebarUserActions = document.getElementById('sidebarUserActions');
+    const profileName = document.getElementById('profileName');
+    const profileEmail = document.getElementById('profileEmail');
+    const profileBadge = document.getElementById('profileBadge');
+    const profileAvatar = document.getElementById('profileAvatar');
+    const downloadCount = document.getElementById('downloadCount');
     
     if (authButtons) authButtons.style.display = 'none';
     if (userMenu) userMenu.style.display = 'block';
     
     if (currentUser) {
         const avatarUrl = `https://ui-avatars.com/api/?background=8b5cf6&color=fff&name=${encodeURIComponent(currentUser.name)}`;
+        
         if (userName) userName.textContent = currentUser.name;
         if (userTier) userTier.textContent = `${currentUser.tier} Member`;
         if (userAvatar) userAvatar.src = avatarUrl;
+        if (dropdownUserName) dropdownUserName.textContent = currentUser.name;
+        if (dropdownUserEmail) dropdownUserEmail.textContent = currentUser.email;
+        if (dropdownAvatar) dropdownAvatar.src = avatarUrl;
         if (sidebarUserName) sidebarUserName.textContent = currentUser.name;
         if (sidebarUserStatus) sidebarUserStatus.textContent = `${currentUser.tier} Member`;
+        if (sidebarAvatar) sidebarAvatar.src = avatarUrl;
         if (sidebarUserBadge) sidebarUserBadge.style.display = 'inline-block';
         if (sidebarAuthActions) sidebarAuthActions.style.display = 'none';
         if (sidebarUserActions) sidebarUserActions.style.display = 'flex';
+        if (profileName) profileName.textContent = currentUser.name;
+        if (profileEmail) profileEmail.textContent = currentUser.email;
+        if (profileBadge) profileBadge.textContent = `${currentUser.tier} Member`;
+        if (profileAvatar) profileAvatar.src = avatarUrl;
+        if (downloadCount) downloadCount.textContent = currentUser.downloadCount || 0;
     }
+    
     updateHistoryBadge();
 }
 
+// Update UI for logged out user
 function updateUIForLoggedOutUser() {
     const authButtons = document.getElementById('authButtons');
     const userMenu = document.getElementById('userMenu');
@@ -157,6 +211,7 @@ function updateUIForLoggedOutUser() {
     if (sidebarUserActions) sidebarUserActions.style.display = 'none';
 }
 
+// Update history badge
 function updateHistoryBadge() {
     const badge = document.getElementById('historyBadge');
     if (badge) {
@@ -166,20 +221,24 @@ function updateHistoryBadge() {
     }
 }
 
+// Add to download history
 function addToHistory(videoTitle, filename, platform) {
     const historyItem = {
         id: Date.now(),
         title: videoTitle,
         filename: filename,
         platform: platform,
-        date: new Date().toISOString()
+        date: new Date().toISOString(),
+        size: 'Unknown'
     };
     downloadHistory.unshift(historyItem);
     if (downloadHistory.length > 50) downloadHistory.pop();
     localStorage.setItem('downloadHistory', JSON.stringify(downloadHistory));
     updateHistoryBadge();
+    console.log('📜 Added to history:', videoTitle);
 }
 
+// Check for saved user on load
 function checkSavedUser() {
     const savedUser = localStorage.getItem('currentUser');
     const savedToken = localStorage.getItem('authToken');
@@ -187,15 +246,19 @@ function checkSavedUser() {
         currentUser = JSON.parse(savedUser);
         authToken = savedToken;
         updateUIForLoggedInUser();
+        console.log('🔄 Restored session for:', currentUser?.email);
     }
 }
 
 // ==================== QUALITY & FORMAT SELECTORS ====================
+
 document.querySelectorAll('.quality-option').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.quality-option').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentQuality = btn.dataset.quality;
+        document.getElementById('qualitySelect').value = currentQuality;
+        console.log('🎚️ Quality changed to:', currentQuality);
     });
 });
 
@@ -204,18 +267,26 @@ document.querySelectorAll('.format-option').forEach(btn => {
         document.querySelectorAll('.format-option').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentFormat = btn.dataset.format;
+        document.getElementById('formatSelect').value = currentFormat;
+        console.log('🎚️ Format changed to:', currentFormat);
     });
 });
 
 // ==================== FETCH VIDEO INFO ====================
+
 document.getElementById('fetchInfoBtn').addEventListener('click', async () => {
     const url = document.getElementById('urlInput').value.trim();
+    
     if (!url) {
         showError('Please enter a video URL');
         return;
     }
     
+    console.log('🔍 Fetching info for URL:', url);
+    console.log('📡 API_URL:', API_URL);
+    
     const fetchBtn = document.getElementById('fetchInfoBtn');
+    const originalText = fetchBtn.innerHTML;
     fetchBtn.disabled = true;
     fetchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
     
@@ -229,28 +300,32 @@ document.getElementById('fetchInfoBtn').addEventListener('click', async () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url })
         });
+        
         const data = await response.json();
         
         if (data.success) {
             displayVideoInfo(data.info, data.platform);
             document.getElementById('loading').style.display = 'none';
             document.getElementById('videoInfo').style.display = 'flex';
+            console.log('✅ Video info fetched:', data.info.title);
         } else {
             showError(data.error || 'Failed to fetch video info');
             document.getElementById('loading').style.display = 'none';
         }
     } catch (error) {
+        console.error('Fetch error:', error);
         showError('Error: ' + error.message);
         document.getElementById('loading').style.display = 'none';
     } finally {
         fetchBtn.disabled = false;
-        fetchBtn.innerHTML = '<i class="fas fa-magic"></i> Analyze';
+        fetchBtn.innerHTML = originalText;
     }
 });
 
 function displayVideoInfo(info, platform) {
     document.getElementById('videoTitle').textContent = info.title || 'Video Title';
     document.getElementById('videoDuration').textContent = formatDuration(info.duration);
+    
     if (info.views) {
         document.getElementById('videoViews').textContent = formatNumber(info.views);
     }
@@ -258,6 +333,9 @@ function displayVideoInfo(info, platform) {
     const thumb = document.getElementById('thumbnail');
     if (info.thumbnail) {
         thumb.src = info.thumbnail;
+        thumb.onerror = () => {
+            thumb.src = `https://via.placeholder.com/480x360/8b5cf6/ffffff?text=${platform}`;
+        };
     } else {
         thumb.src = `https://via.placeholder.com/480x360/8b5cf6/ffffff?text=${platform}`;
     }
@@ -276,6 +354,7 @@ function displayVideoInfo(info, platform) {
 }
 
 // ==================== DOWNLOAD FUNCTION ====================
+
 document.getElementById('downloadBtn')?.addEventListener('click', async () => {
     const url = document.getElementById('urlInput').value.trim();
     const videoTitle = document.getElementById('videoTitle').textContent;
@@ -288,12 +367,16 @@ document.getElementById('downloadBtn')?.addEventListener('click', async () => {
     }
     
     if (!authToken) {
+        console.log('🔒 User not logged in, showing login modal');
         alert('Please login or sign up to download videos!');
         document.getElementById('loginModal').style.display = 'flex';
         return;
     }
     
+    console.log('📥 Starting download for:', videoTitle, 'by user:', currentUser?.email);
+    
     const downloadBtn = document.getElementById('downloadBtn');
+    const originalText = downloadBtn.innerHTML;
     downloadBtn.disabled = true;
     downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
     
@@ -308,23 +391,34 @@ document.getElementById('downloadBtn')?.addEventListener('click', async () => {
             },
             body: JSON.stringify({ url, quality: currentQuality, format: currentFormat })
         });
+        
         const data = await response.json();
         
         if (data.success) {
             currentJobId = data.jobId;
             window.currentVideoInfo = { title: videoTitle, platform: platform };
             startPolling(currentJobId);
+            console.log('✅ Download started, Job ID:', currentJobId);
+        } else if (response.status === 401) {
+            console.log('🔒 Session expired, redirecting to login');
+            alert('Session expired. Please login again.');
+            await logout();
+            document.getElementById('loginModal').style.display = 'flex';
+            hideProgress();
+            downloadBtn.disabled = false;
+            downloadBtn.innerHTML = originalText;
         } else {
             showError(data.error || 'Download failed');
             hideProgress();
             downloadBtn.disabled = false;
-            downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download Now <i class="fas fa-arrow-right"></i>';
+            downloadBtn.innerHTML = originalText;
         }
     } catch (error) {
+        console.error('Download error:', error);
         showError('Error: ' + error.message);
         hideProgress();
         downloadBtn.disabled = false;
-        downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download Now <i class="fas fa-arrow-right"></i>';
+        downloadBtn.innerHTML = originalText;
     }
 });
 
@@ -361,6 +455,7 @@ function updateProgress(percent) {
         const offset = circumference - (percent / 100) * circumference;
         circle.style.strokeDashoffset = offset;
     }
+    
     percentText.textContent = `${Math.round(percent)}%`;
     
     if (percent < 30) statusText.textContent = 'Initializing download...';
@@ -374,9 +469,11 @@ function onDownloadComplete(result) {
     
     const downloadLink = document.getElementById('downloadFileLink');
     downloadLink.href = `${API_URL}/download/file/${currentJobId}`;
+    downloadLink.download = result.filename;
     
     if (window.currentVideoInfo) {
         addToHistory(window.currentVideoInfo.title, result.filename, window.currentVideoInfo.platform);
+        console.log('✅ Download completed:', window.currentVideoInfo.title);
     }
     
     document.getElementById('successBox').style.display = 'block';
@@ -389,6 +486,7 @@ function onDownloadComplete(result) {
 function onDownloadFailed(error) {
     hideProgress();
     showError(error || 'Download failed');
+    console.error('❌ Download failed:', error);
     
     const downloadBtn = document.getElementById('downloadBtn');
     downloadBtn.disabled = false;
@@ -396,6 +494,7 @@ function onDownloadFailed(error) {
 }
 
 // ==================== UI HELPER FUNCTIONS ====================
+
 function showProgress() {
     document.getElementById('progressContainer').style.display = 'flex';
     document.getElementById('downloadBtn').disabled = true;
@@ -417,6 +516,7 @@ function showError(message) {
 function resetDownloader() {
     currentJobId = null;
     if (pollInterval) clearInterval(pollInterval);
+    
     document.getElementById('urlInput').value = '';
     document.getElementById('videoInfo').style.display = 'none';
     document.getElementById('progressContainer').style.display = 'none';
@@ -445,12 +545,15 @@ function formatNumber(num) {
 }
 
 // ==================== MODAL FUNCTIONALITY ====================
+
 const loginModal = document.getElementById('loginModal');
 const signupModal = document.getElementById('signupModal');
 const premiumModal = document.getElementById('premiumModal');
+
 const loginBtn = document.getElementById('loginBtn');
 const signupBtn = document.getElementById('signupBtn');
 const premiumBtn = document.getElementById('premiumBtn');
+
 const closeLoginModal = document.getElementById('closeLoginModal');
 const closeSignupModal = document.getElementById('closeSignupModal');
 const closePremiumModal = document.getElementById('closePremiumModal');
@@ -471,6 +574,7 @@ window.onclick = (event) => {
 
 const switchToSignup = document.getElementById('switchToSignup');
 const switchToLogin = document.getElementById('switchToLogin');
+
 if (switchToSignup) {
     switchToSignup.onclick = (e) => {
         e.preventDefault();
@@ -478,6 +582,7 @@ if (switchToSignup) {
         signupModal.style.display = 'flex';
     };
 }
+
 if (switchToLogin) {
     switchToLogin.onclick = (e) => {
         e.preventDefault();
@@ -486,6 +591,7 @@ if (switchToLogin) {
     };
 }
 
+// Login form handler
 const loginForm = document.getElementById('loginForm');
 if (loginForm) {
     loginForm.onsubmit = async (e) => {
@@ -493,6 +599,7 @@ if (loginForm) {
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
         const remember = document.getElementById('rememberMe').checked;
+        
         const success = await login(email, password, remember);
         if (success) {
             loginModal.style.display = 'none';
@@ -501,6 +608,7 @@ if (loginForm) {
     };
 }
 
+// Signup form handler
 const signupForm = document.getElementById('signupForm');
 if (signupForm) {
     signupForm.onsubmit = async (e) => {
@@ -515,10 +623,12 @@ if (signupForm) {
             alert('Passwords do not match!');
             return;
         }
+        
         if (!agree) {
             alert('Please agree to the Terms and Conditions');
             return;
         }
+        
         const success = await signup(name, email, password);
         if (success) {
             signupModal.style.display = 'none';
@@ -528,6 +638,7 @@ if (signupForm) {
     };
 }
 
+// Logout handler
 const logoutBtn = document.getElementById('logoutBtn');
 if (logoutBtn) {
     logoutBtn.onclick = async (e) => {
@@ -536,6 +647,7 @@ if (logoutBtn) {
     };
 }
 
+// Mobile logout
 const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
 if (mobileLogoutBtn) {
     mobileLogoutBtn.onclick = async () => {
@@ -547,10 +659,16 @@ if (mobileLogoutBtn) {
 // Social login buttons (demo)
 const googleLogin = document.getElementById('googleLogin');
 const githubLogin = document.getElementById('githubLogin');
+const googleSignup = document.getElementById('googleSignup');
+const githubSignup = document.getElementById('githubSignup');
+
 if (googleLogin) googleLogin.onclick = () => alert('Google login demo');
 if (githubLogin) githubLogin.onclick = () => alert('GitHub login demo');
+if (googleSignup) googleSignup.onclick = () => alert('Google signup demo');
+if (githubSignup) githubSignup.onclick = () => alert('GitHub signup demo');
 
-// ==================== MOBILE MENU ====================
+// ==================== MOBILE MENU FUNCTIONALITY ====================
+
 const mobileMenuBtn = document.getElementById('mobileMenuBtn');
 const mobileSidebar = document.getElementById('mobileSidebar');
 const mobileOverlay = document.getElementById('mobileOverlay');
@@ -574,12 +692,14 @@ if (mobileOverlay) mobileOverlay.onclick = closeMobileMenu;
 
 const mobileLoginBtn = document.getElementById('mobileLoginBtn');
 const mobileSignupBtn = document.getElementById('mobileSignupBtn');
+
 if (mobileLoginBtn) {
     mobileLoginBtn.onclick = () => {
         closeMobileMenu();
         if (loginModal) loginModal.style.display = 'flex';
     };
 }
+
 if (mobileSignupBtn) {
     mobileSignupBtn.onclick = () => {
         closeMobileMenu();
@@ -587,13 +707,16 @@ if (mobileSignupBtn) {
     };
 }
 
-// ==================== PARTICLES & CURSOR ====================
+// ==================== PARTICLE BACKGROUND ====================
+
 function initParticles() {
     const canvas = document.getElementById('particleCanvas');
     if (!canvas) return;
+    
     const ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+    
     const particles = [];
     for (let i = 0; i < 80; i++) {
         particles.push({
@@ -605,6 +728,7 @@ function initParticles() {
             alpha: Math.random() * 0.5
         });
     }
+    
     function animate() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         particles.forEach(p => {
@@ -622,30 +746,53 @@ function initParticles() {
         requestAnimationFrame(animate);
     }
     animate();
+    
     window.addEventListener('resize', () => {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
     });
 }
 
+// ==================== CURSOR EFFECT ====================
+
 function initCursor() {
     const cursor = document.querySelector('.cursor');
     const follower = document.querySelector('.cursor-follower');
     if (!cursor || !follower) return;
+    
     document.addEventListener('mousemove', (e) => {
         cursor.style.transform = `translate(${e.clientX - 4}px, ${e.clientY - 4}px)`;
         follower.style.transform = `translate(${e.clientX - 20}px, ${e.clientY - 20}px)`;
     });
+    
+    const buttons = document.querySelectorAll('button, .btn, .platform, .nav-link, .social-link');
+    buttons.forEach(btn => {
+        btn.addEventListener('mouseenter', () => {
+            follower.style.width = '50px';
+            follower.style.height = '50px';
+            follower.style.borderColor = '#ec4899';
+        });
+        btn.addEventListener('mouseleave', () => {
+            follower.style.width = '40px';
+            follower.style.height = '40px';
+            follower.style.borderColor = '#8b5cf6';
+        });
+    });
 }
 
 // ==================== INITIALIZE ====================
+
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 App initializing...');
     console.log('🔗 API_URL:', API_URL);
+    
+    // Test backend connection
     const isConnected = await testBackendConnection();
     if (!isConnected) {
+        console.error('⚠️ Cannot connect to backend. Please check if backend is running.');
         showError('Cannot connect to server. Please try again later.');
     }
+    
     checkSavedUser();
     await verifyToken();
     initParticles();
