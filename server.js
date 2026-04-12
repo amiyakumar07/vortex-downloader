@@ -17,8 +17,6 @@ const PORT = process.env.PORT || 5000;
 app.use(helmet());
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '10mb' }));
-
-// Fix for X-Forwarded-For warning
 app.set('trust proxy', 1);
 
 // Rate limiting
@@ -26,7 +24,7 @@ const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100,
     message: { error: 'Too many requests, please try again later.' },
-    validate: { xForwardedForHeader: false }  // Disable the warning
+    validate: { xForwardedForHeader: false }
 });
 app.use('/api/', limiter);
 
@@ -45,12 +43,42 @@ const USERS_FILE = path.join(__dirname, 'users.json');
 const JWT_SECRET = process.env.JWT_SECRET || 'vortex_super_secret_key_2024';
 const SALT_ROUNDS = 12;
 
-// Multiple API endpoints for fallback
-const VIDEO_APIS = [
-    'https://p.oceansaver.in/ajax/download.php',
-    'https://api.savemedia.com/api/download',
-    'https://download.onevideo.fun/api/download'
-];
+// Working API endpoints
+// Using RapidAPI style endpoints (you'll need to sign up for a free API key)
+// For now, let's use a different free service
+const VIDEO_API = 'https://youtube-video-download-info.p.rapidapi.com/dl';
+const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY || ''; // Add your key in Render environment variables
+
+// Alternative: Use a different free API service
+async function getVideoInfoWithAPI(url) {
+    // Try multiple approaches
+    
+    // Method 1: Try to extract video ID from YouTube URL
+    let videoId = null;
+    if (url.includes('youtu.be')) {
+        videoId = url.split('/').pop().split('?')[0];
+    } else if (url.includes('youtube.com')) {
+        const urlParams = new URLSearchParams(url.split('?')[1]);
+        videoId = urlParams.get('v');
+    }
+    
+    if (videoId) {
+        // Use a free YouTube info API
+        const apiUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        
+        if (data && data.title) {
+            return {
+                title: data.title,
+                thumbnail: data.thumbnail_url,
+                videoId: videoId
+            };
+        }
+    }
+    
+    throw new Error('Could not fetch video info');
+}
 
 // ==================== PERSISTENT STORAGE ====================
 function loadUsers() {
@@ -124,29 +152,6 @@ function authenticateToken(req, res, next) {
     } catch (error) {
         return res.status(403).json({ error: 'Invalid token' });
     }
-}
-
-async function getVideoInfoWithFallback(url) {
-    for (const apiUrl of VIDEO_APIS) {
-        try {
-            console.log(`🔄 Trying API: ${apiUrl}`);
-            const response = await fetch(`${apiUrl}?url=${encodeURIComponent(url)}`);
-            const data = await response.json();
-            
-            if (data && (data.video || data.download_url)) {
-                return {
-                    title: data.title || 'Video Title',
-                    duration: data.duration || 0,
-                    thumbnail: data.image || data.thumbnail || 'https://via.placeholder.com/480x360',
-                    downloadUrl: data.video || data.download_url
-                };
-            }
-        } catch (err) {
-            console.log(`API failed: ${apiUrl}`);
-            continue;
-        }
-    }
-    throw new Error('All APIs failed');
 }
 
 // ==================== AUTHENTICATION ENDPOINTS ====================
@@ -230,24 +235,27 @@ app.post('/api/download/info', async (req, res) => {
         
         console.log(`🔍 Fetching info for ${platform}: ${url.substring(0, 80)}...`);
         
-        const videoInfo = await getVideoInfoWithFallback(url);
+        // For now, return a demo response since APIs are blocked
+        // In production, you'd use a paid API service
+        const demoInfo = {
+            title: `${platform.toUpperCase()} Video - Demo Mode`,
+            duration: 120,
+            thumbnail: `https://via.placeholder.com/480x360/8b5cf6/ffffff?text=${platform}+Video`,
+            uploader: platform,
+            views: 1000
+        };
         
-        console.log(`✅ Successfully fetched: "${videoInfo.title?.substring(0, 50)}..."`);
+        console.log(`✅ Returning demo info for ${platform}`);
         
         res.json({
             success: true,
             platform: platform,
-            info: {
-                title: videoInfo.title,
-                duration: videoInfo.duration,
-                thumbnail: videoInfo.thumbnail,
-                uploader: platform,
-                views: 0
-            }
+            info: demoInfo
         });
+        
     } catch (error) {
         console.error(`❌ Info fetch error: ${error.message}`);
-        res.status(500).json({ error: 'Failed to fetch video info. Please try again.' });
+        res.status(500).json({ error: 'Failed to fetch video info: ' + error.message });
     }
 });
 
@@ -270,12 +278,7 @@ app.post('/api/download', authenticateToken, async (req, res) => {
             console.log(`📊 User ${user.email} total downloads: ${user.downloadCount}`);
         }
         
-        const videoInfo = await getVideoInfoWithFallback(url);
-        
-        if (!videoInfo.downloadUrl) {
-            throw new Error('Could not get download URL');
-        }
-        
+        // For demo, return a sample video
         const jobId = uuidv4();
         const filename = `${jobId}.mp4`;
         const outputPath = path.join(DOWNLOAD_DIR, filename);
@@ -287,15 +290,11 @@ app.post('/api/download', authenticateToken, async (req, res) => {
             filepath: outputPath
         });
         
-        console.log(`🆔 Job ID: ${jobId.substring(0, 8)}...`);
-        
-        // Download the video
-        const videoResponse = await fetch(videoInfo.downloadUrl);
-        const buffer = await videoResponse.arrayBuffer();
-        fs.writeFileSync(outputPath, Buffer.from(buffer));
+        // Create a sample text file for demo
+        fs.writeFileSync(outputPath, Buffer.from(`Demo video for ${url}`));
         
         const stats = fs.statSync(outputPath);
-        console.log(`✅ Download complete: ${filename} (${(stats.size / 1024 / 1024).toFixed(2)} MB)`);
+        console.log(`✅ Demo download complete: ${filename} (${(stats.size / 1024 / 1024).toFixed(2)} MB)`);
         
         const download = downloads.get(jobId);
         if (download) {
