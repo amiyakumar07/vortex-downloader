@@ -43,14 +43,25 @@ if (process.env.NODE_ENV !== 'production') {
 
 // ==================== SECURITY MIDDLEWARE ====================
 app.use(helmet());
+app.use(cors({ origin: true, credentials: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.set('trust proxy', 1);
 
-// CORS configuration
-app.use(cors({
-    origin: true,
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-}));
+// Skip ngrok warning page
+app.use((req, res, next) => {
+    res.setHeader('ngrok-skip-browser-warning', 'true');
+    next();
+});
+
+// Rate limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: { error: 'Too many requests, please try again later.' },
+    validate: { xForwardedForHeader: false }
+});
+app.use('/api/', limiter);
 
 // Rate limiting
 const limiter = rateLimit({
