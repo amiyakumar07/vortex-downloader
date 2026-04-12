@@ -1,5 +1,4 @@
 // ==================== API CONFIGURATION ====================
-// ✅ CORRECT - Using your LIVE Render backend
 const API_URL = 'https://lyricism-distress-trial.ngrok-free.dev/api';
 
 console.log('🔗 Connected to backend:', API_URL);
