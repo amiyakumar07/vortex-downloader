@@ -1,8 +1,5 @@
 // ==================== API CONFIGURATION ====================
-const API_URL = 'https://lyricism-distress-trial.ngrok-free.dev/api';
-
-console.log('🔗 Connected to backend:', API_URL);
-
+const API_URL = 'http://localhost:5000/api';
 let authToken = localStorage.getItem('authToken') || null;
 let currentUser = null;
 
@@ -12,19 +9,6 @@ let pollInterval = null;
 let currentQuality = 'highest';
 let currentFormat = 'mp4';
 let downloadHistory = JSON.parse(localStorage.getItem('downloadHistory') || '[]');
-
-// ==================== TEST BACKEND CONNECTION ====================
-async function testBackendConnection() {
-    try {
-        const response = await fetch(`${API_URL}/health`);
-        const data = await response.json();
-        console.log('✅ Backend connected:', data);
-        return true;
-    } catch (error) {
-        console.error('❌ Backend connection failed:', error);
-        return false;
-    }
-}
 
 // ==================== AUTHENTICATION FUNCTIONS ====================
 
@@ -283,7 +267,6 @@ document.getElementById('fetchInfoBtn').addEventListener('click', async () => {
     }
     
     console.log('🔍 Fetching info for URL:', url);
-    console.log('📡 API_URL:', API_URL);
     
     const fetchBtn = document.getElementById('fetchInfoBtn');
     const originalText = fetchBtn.innerHTML;
@@ -422,34 +405,25 @@ document.getElementById('downloadBtn')?.addEventListener('click', async () => {
     }
 });
 
-// FIXED startPolling function with debug logs
 function startPolling(jobId) {
     if (pollInterval) clearInterval(pollInterval);
     
-    console.log("🚀 Starting polling for job:", jobId);
-    
     pollInterval = setInterval(async () => {
         try {
-            console.log("🔍 Checking status for job:", jobId);
             const response = await fetch(`${API_URL}/status/${jobId}`);
             const status = await response.json();
-            console.log("📊 Status response:", status);
             
             updateProgress(status.progress || 0);
             
             if (status.state === 'completed') {
-                console.log("✅ COMPLETED! Stopping polling.");
                 clearInterval(pollInterval);
                 onDownloadComplete(status.result);
             } else if (status.state === 'failed') {
-                console.log("❌ FAILED!");
                 clearInterval(pollInterval);
                 onDownloadFailed(status.error);
-            } else {
-                console.log("⏳ Still processing... State:", status.state);
             }
         } catch (error) {
-            console.error('❌ Status check failed:', error);
+            console.error('Status check failed:', error);
         }
     }, 2000);
 }
@@ -472,9 +446,7 @@ function updateProgress(percent) {
     else statusText.textContent = 'Processing your file...';
 }
 
-// FIXED onDownloadComplete function
 function onDownloadComplete(result) {
-    console.log("🎉 onDownloadComplete called with result:", result);
     hideProgress();
     document.getElementById('videoInfo').style.display = 'none';
     
@@ -795,15 +767,6 @@ function initCursor() {
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 App initializing...');
-    console.log('🔗 API_URL:', API_URL);
-    
-    // Test backend connection
-    const isConnected = await testBackendConnection();
-    if (!isConnected) {
-        console.error('⚠️ Cannot connect to backend. Please check if backend is running.');
-        showError('Cannot connect to server. Please try again later.');
-    }
-    
     checkSavedUser();
     await verifyToken();
     initParticles();
